@@ -1,0 +1,36 @@
+{
+  "tool": "calculate-price",
+  "arguments": {
+    "storeCode": "3450121",
+    "orderType": 1,
+    "beType": 1,
+    "items": [
+      { "productCode": "1100", "quantity": 1 },
+      { "productCode": "4810", "quantity": 1 },
+      { "productCode": "9900008751", "quantity": 1 }
+    ]
+  },
+  "storeName": "麦当劳成都天府三街餐厅",
+  "capturedAt": "2026-10-15T16:53:32",
+  "note": "calculate-price 的真实返回快照。所有金额字段单位都是「分」，展示时要除以 100。takeWayList 是 create-order 必传的 takeWayCode 来源（到店场景）。",
+  "data": {
+    "productOriginalPrice": 5000,
+    "productPrice": 5000,
+    "originalPrice": 5000,
+    "discount": 0,
+    "price": 5000,
+    "productList": [
+      { "productCode": "1100", "productName": "巨无霸", "quantity": 1, "originalSubtotal": 2600, "subtotal": 2600 },
+      { "productCode": "4810", "productName": "中薯条", "quantity": 1, "originalSubtotal": 1450, "subtotal": 1450 },
+      { "productCode": "9900008751", "productName": "可乐", "quantity": 1, "originalSubtotal": 950, "subtotal": 950 }
+    ],
+    "takeWayList": [
+      { "code": "eat-in", "title": "堂食", "subtitle": "店内用餐" },
+      { "code": "take-in-store", "title": "外带", "subtitle": "店内自提" }
+    ]
+  },
+  "observedNotes": [
+    "同一个商品编码在 query-meals 里叫「薯条」(4810)，在 calculate-price 的 productList 里叫「中薯条」——两处命名不完全一致，做名称匹配时不能只靠名字。",
+    "本站点本次返回的 takeWayList 只有堂食与外带两项，说明取餐方式随门店变化，必须用返回结果而不是写死。"
+  ]
+}

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+node_modules/
+_probe.html
+_preview.html
+_metrics.html

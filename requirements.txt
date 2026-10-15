@@ -1,0 +1,9 @@
+# 本项目只使用 Python 标准库（http.server / urllib / json / pathlib / argparse / re / secrets），
+# 没有任何第三方依赖 —— pip install 可以直接跳过。
+#
+# 这个文件存在的意义是明确告诉你：我们刻意不引入依赖。
+#
+# 唯一一个「可选的」非标准库是 Pillow，而且只在你想重新生成预览图（tests/make_preview.py）
+# 时才需要；跑页面、跑测试链都不需要它。
+#
+# 可选：pip install pillow

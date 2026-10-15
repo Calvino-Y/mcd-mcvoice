@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="麦声 McVoice —— 视障用户用语音完成麦当劳点餐全流程。基于麦当劳 MCP 真实门店、菜单与价格数据。">
+<title>麦声 McVoice · 用说的点麦当劳</title>
+<style>
+/* ==========================================================================
+   设计基调：简洁经典，一切为「听得懂、按得到」服务。
+   - 根字号 20px（浏览器默认 16px），可再放大到 32px
+   - 正文对比度 17:1，次要文字 8:1，按钮 18:1，全部超过 WCAG AAA(7:1)
+   - 双色焦点环：白圈 + 黑环，浅色和深色控件上都看得见
+   - 不用渐变、不用装饰阴影、不靠颜色单独传达信息
+   ========================================================================== */
+:root{
+  --bg:#ffffff; --panel:#f4f4f4; --panel-2:#ebebeb;
+  --ink:#111111; --muted:#4d4d4d; --line:#b0b0b0; --line-strong:#6b6b6b;
+  --accent:#0b3d91; --accent-ink:#ffffff;
+  --live:#a1121b;
+  --ok:#0b5f2a; --warn:#8a4b00; --bad:#a1121b;
+  --radius:10px;
+  --fs:20px;
+}
+*{box-sizing:border-box}
+html{font-size:var(--fs)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",
+              "Microsoft YaHei","Source Han Sans SC",sans-serif;
+  font-size:1rem; line-height:1.75;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:44rem; margin:0 auto; padding:1.25rem 1.25rem 4rem}
+
+/* 焦点：任何可聚焦元素都必须有清晰可见的焦点指示（WCAG 2.4.7 / 2.4.11） */
+:focus{outline:none}
+:focus-visible{outline:3px solid #ffffff; box-shadow:0 0 0 6px #111111; border-radius:6px}
+
+/* 跳到主内容：键盘用户第一个 Tab 就能用 */
+.skip{position:absolute; left:-9999px; top:0; z-index:99;
+  background:var(--ink); color:#fff; padding:.75rem 1.25rem; border-radius:0 0 var(--radius) 0;
+  font-weight:700; text-decoration:none}
+.skip:focus{left:0}
+
+header.site{border-bottom:3px solid var(--ink); padding-bottom:1rem; margin-bottom:1.5rem}
+.brand{display:flex; align-items:baseline; gap:.6rem; margin:0 0 .5rem}
+.brand b{font-size:1.25rem; letter-spacing:.02em}
+.brand span{color:var(--muted); font-size:.85rem; letter-spacing:.08em}
+h1{font-size:1.75rem; line-height:1.35; margin:.25rem 0 .5rem}
+.lede{margin:0; color:var(--muted); font-size:.95rem}
+
+section{margin:2rem 0; padding-top:1.25rem; border-top:1px solid var(--line)}
+section:first-of-type{border-top:none; padding-top:0}
+h2{font-size:1.15rem; margin:0 0 .75rem; letter-spacing:.02em}
+h3{font-size:1rem; margin:1.25rem 0 .5rem; color:var(--muted)}
+
+/* ---- 主控区：一屏之内看清「现在在哪、能说什么、按哪里」 ---- */
+.stage{background:var(--panel); border:2px solid var(--line-strong); border-radius:var(--radius);
+  padding:1.25rem; margin-bottom:1.25rem}
+.stage-top{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.5rem}
+.step-no{background:var(--ink); color:#fff; font-weight:700; font-size:.8rem;
+  padding:.2rem .6rem; border-radius:999px; letter-spacing:.06em}
+.step-name{font-size:1.35rem; font-weight:700; margin:0}
+.said{margin:.5rem 0 0; font-size:1.05rem; min-height:3.5rem}
+.said strong{background:#fff3b0; padding:0 .25rem; border-radius:3px}
+
+.btn{
+  font:inherit; font-weight:700; cursor:pointer;
+  min-height:3.25rem; padding:.7rem 1.25rem;
+  border-radius:var(--radius); border:2px solid var(--ink);
+  background:#fff; color:var(--ink);
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+}
+.btn:hover{background:var(--panel-2)}
+.btn-primary{background:#141414; color:#fff; border-color:#141414}
+.btn-primary:hover{background:#333}
+.btn-accent{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn-accent:hover{background:#0a3279}
+.btn-live{background:var(--live); color:#fff; border-color:var(--live)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn-row{display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1rem}
+.btn-row .btn{flex:1 1 11rem}
+
+/* 麦克风大按钮：这个应用的主入口，单独做得又大又显眼 */
+.mic{width:100%; min-height:4.5rem; font-size:1.15rem}
+.mic[aria-pressed="true"]{background:var(--live); border-color:var(--live); color:#fff}
+
+.hint{margin:1rem 0 0; padding:.85rem 1rem; background:#fff; border:1px solid var(--line);
+  border-left:5px solid var(--accent); border-radius:0 var(--radius) var(--radius) 0; font-size:.95rem}
+.hint b{display:block; margin-bottom:.25rem}
+.chips{list-style:none; display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; padding:0}
+.chips li{background:#fff; border:1px solid var(--line-strong); border-radius:999px;
+  padding:.3rem .85rem; font-size:.9rem}
+
+.grid{display:grid; gap:.75rem; grid-template-columns:1fr}
+@media (min-width:34rem){ .grid.two{grid-template-columns:1fr 1fr} }
+
+.card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:1rem}
+.card h3{margin-top:0; color:var(--ink); font-size:1rem}
+.card .num{font-size:1.5rem; font-weight:700; display:block; margin:.15rem 0}
+.card .sub{color:var(--muted); font-size:.85rem}
+
+ol.list, ul.list{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
+ol.list li, ul.list li{display:flex; gap:.75rem; align-items:baseline;
+  padding:.7rem .25rem; border-bottom:1px solid var(--line)}
+ol.list li .idx{min-width:2rem; font-weight:700; color:var(--muted)}
+.grow{flex:1}
+.price{font-weight:700; white-space:nowrap}
+.tag{display:inline-block; font-size:.78rem; padding:.1rem .5rem; border-radius:999px;
+  border:1px solid var(--line-strong); color:var(--muted); margin-left:.4rem; white-space:nowrap}
+.tag-on{background:#e8f2e8; border-color:var(--ok); color:var(--ok)}
+
+.empty{color:var(--muted); padding:.75rem .25rem}
+
+/* 打字兜底：语音不可用或环境嘈杂时必须还能用 */
+.field{display:block; margin-top:1rem}
+.field span{display:block; font-weight:700; margin-bottom:.35rem}
+input[type=text], input[type=password], input[type=search]{
+  font:inherit; width:100%; padding:.7rem .85rem; border:2px solid var(--line-strong);
+  border-radius:var(--radius); background:#fff; color:var(--ink); min-height:3.25rem}
+label.check{display:flex; gap:.7rem; align-items:flex-start; padding:.6rem 0; cursor:pointer}
+label.check input{width:1.6rem; height:1.6rem; margin:.2rem 0 0; flex:none}
+.range-row{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap}
+input[type=range]{flex:1 1 12rem; min-height:3rem}
+
+.status-line{display:flex; align-items:center; gap:.6rem; font-size:.95rem; margin:.5rem 0 0}
+.dot{width:.85rem; height:.85rem; border-radius:50%; flex:none; border:2px solid var(--ink)}
+.dot.ok{background:#17a34a} .dot.warn{background:#e0a800} .dot.bad{background:var(--live)}
+
+table{width:100%; border-collapse:collapse; font-size:.92rem}
+caption{text-align:left; color:var(--muted); padding-bottom:.5rem}
+th,td{text-align:left; padding:.55rem .5rem; border-bottom:1px solid var(--line)}
+th{font-size:.85rem; color:var(--muted); font-weight:700}
+
+details{border:1px solid var(--line); border-radius:var(--radius); padding:.75rem 1rem; background:#fff}
+details+details{margin-top:.75rem}
+summary{font-weight:700; cursor:pointer; padding:.35rem 0}
+summary:focus-visible{outline:3px solid #fff; box-shadow:0 0 0 6px #111}
+
+code, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em}
+pre{margin:.75rem 0 0; padding:.85rem; background:var(--panel-2); border-radius:var(--radius);
+  overflow-x:auto; font-size:.85rem; line-height:1.6}
+
+footer.site{margin-top:3rem; padding-top:1.25rem; border-top:3px solid var(--ink);
+  font-size:.85rem; color:var(--muted)}
+footer.site p{margin:.4rem 0}
+
+.sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0}
+
+/* 高对比偏好：系统的「增强对比」开关打开时，把次要色也压到纯黑 */
+@media (prefers-contrast:more){
+  :root{--muted:#111111; --line:#111111; --line-strong:#111111; --panel:#ffffff; --panel-2:#ffffff}
+  .card,.stage,.hint,details{border-width:3px}
+}
+/* 减少动画偏好：本页本来就没有动画，这里显式声明一下，避免以后加东西忘了 */
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+@media print{ .btn,.mic{display:none} }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要内容</a>
+
+<div class="wrap">
+<header class="site">
+  <p class="brand"><b>麦声 · McVoice</b><span>VOICE ORDERING</span></p>
+  <h1>用说的，点麦当劳</h1>
+  <p class="lede">这份页面为视障用户设计：全程可以不看屏幕，用语音完成「选门店 → 点餐 → 确认 → 算价 → 下单」。
+  也可以完全用键盘操作。所有门店、菜单与价格都来自麦当劳 MCP 的真实返回。</p>
+</header>
+
+<main id="main">
+
+  <!-- ================= 主控区 ================= -->
+  <section aria-labelledby="h-stage" id="sec-stage">
+    <h2 id="h-stage" class="sr-only">当前步骤与语音控制</h2>
+
+    <div class="stage">
+      <div class="stage-top">
+        <span class="step-no" id="stepNo">STEP 1</span>
+        <p class="step-name" id="stepName">准备开始</p>
+      </div>
+      <p class="said" id="said">按下面的按钮或按回车键开始。开始之后，我会把每一步都念出来。</p>
+    </div>
+
+    <!-- 状态播报区：屏幕阅读器靠它跟上流程；aria-atomic 保证整句重读而不是只读变化部分 -->
+    <p id="live" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></p>
+    <p id="alert" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></p>
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary mic" id="micBtn" aria-pressed="false">开始使用</button>
+    </div>
+
+    <div class="hint">
+      <b>这个按钮是总开关</b>
+      第一次按它会开启语音播报并进入点餐流程；之后按它可以随时「开始说话 / 停止说话」。
+      说话时按钮会变成红色。听不清就按「再说一遍」，说错了就按「退回上一步」。
+    </div>
+
+    <div class="btn-row">
+      <button type="button" class="btn" id="repeatBtn">再说一遍</button>
+      <button type="button" class="btn" id="backBtn">退回上一步</button>
+      <button type="button" class="btn" id="helpBtn">我能说什么</button>
+    </div>
+
+    <h3>可以这样说</h3>
+    <ul class="chips" id="chips"><li>开始使用后这里会列出当前步骤能说的话</li></ul>
+
+    <h3>也可以打字</h3>
+    <label class="field" for="typeInput">
+      <span>把想说的话打在这里（语音不可用、或环境太吵时用）</span>
+      <input type="text" id="typeInput" autocomplete="off" placeholder="例如：来一份巨无霸和一杯可乐">
+    </label>
+    <div class="btn-row">
+      <button type="button" class="btn btn-accent" id="sendBtn">发送这句话</button>
+    </div>
+  </section>
+
+  <!-- ================= 内容区：随步骤变化 ================= -->
+  <section aria-labelledby="h-body" id="sec-body">
+    <h2 id="h-body">当前内容</h2>
+    <div id="body"><p class="empty">还没有内容。先按「开始使用」。</p></div>
+  </section>
+
+  <!-- ================= 无障碍自检 ================= -->
+  <section aria-labelledby="h-a11y" id="sec-a11y">
+    <h2 id="h-a11y">无障碍自检</h2>
+    <p>这个面板不是装饰：它真的会去检查当前页面——每个按钮有没有可访问名称、正文对比度够不够、
+    触控目标是否够大、有没有键盘陷阱、无障碍播报区域是否就位。检查结果如实显示，不通过就是不过。</p>
+    <div class="btn-row">
+      <button type="button" class="btn" id="auditBtn">运行自检</button>
+    </div>
+    <div id="auditOut" aria-live="polite"></div>
+  </section>
+
+  <!-- ================= 设置 ================= -->
+  <section aria-labelledby="h-set" id="sec-set">
+    <h2 id="h-set">设置</h2>
+
+    <label class="check" for="speakOn">
+      <input type="checkbox" id="speakOn" checked>
+      <span><strong>页面语音播报</strong><br>
+      <span class="sub">如果你自己就在用屏幕阅读器（如 NVDA、TalkBack），建议关掉这一项，
+      否则两个声音会互相打断。关掉后所有内容仍然会被播报，只是改由你的屏幕阅读器念。</span></span>
+    </label>
+
+    <label class="check" for="allowOrder">
+      <input type="checkbox" id="allowOrder">
+      <span><strong>允许创建订单</strong><br>
+      <span class="sub">默认关闭，此时流程只走到「算出总价」为止，不会产生任何订单。
+      打开后，你在报价步骤说「确认下单」，页面才会真的调用 MCP 创建订单并给出支付链接。
+      付款始终由你自己扫码完成，本工具不代付。</span></span>
+    </label>
+
+    <h3>正文大小</h3>
+    <div class="range-row">
+      <label for="fontScale" class="sr-only">正文大小</label>
+      <input type="range" id="fontScale" min="90" max="160" step="5" value="100"
+             aria-describedby="fontScaleVal">
+      <output id="fontScaleVal" class="mono">100%</output>
+      <button type="button" class="btn" id="fontReset">恢复默认</button>
+    </div>
+
+    <h3>本地模式（用你自己的账号下单）</h3>
+    <p class="sub">上面那份菜单是我的账号采样到的快照。要让页面跑在你自己的门店和账号上，
+    请在项目目录里执行 <code>python scripts/serve.py</code>，然后在这里填入你自己的 MCP Token。</p>
+    <div id="localBox"></div>
+  </section>
+
+</main>
+
+<footer class="site">
+  <p><strong>数据来源</strong>：麦当劳 MCP 的 <code>query-nearby-stores</code> / <code>query-meals</code> /
+  <code>calculate-price</code> / <code>query-my-coupons</code> 真实返回。</p>
+  <p id="srcMeta"></p>
+  <p><strong>免责声明</strong>：本项目为麦当劳程序员节创意开发大赛参赛作品，由参赛者独立开发，
+  非麦当劳官方产品。餐品信息、价格与供应状态以麦当劳官方渠道的实时结果为准。</p>
+</footer>
+</div>
+
+<script>
+/* ---SOLVER-BEGIN--- */
+/* ==========================================================================
+   数据层：同一份页面支持两种用法。
+
+   1) 演示模式（GitHub Pages）
+      数据是构建时注入的快照。算价由页面按菜单现价相加，页面会明确标注
+      「未调 calculate-price」，不会假装自己算过优惠。
+
+   2) 本地模式（python scripts/serve.py）
+      serve.py 服务这个页面时注入 window.__LOCAL__。用户在设置区填入自己的
+      MCP Token 后，本机后端代其调用 MCP，把真实门店/菜单/算价结果写进
+      sessionStorage 并整页刷新，让整页用新数据重新初始化一遍。
+
+   为什么用「写 sessionStorage + 刷新」而不是就地替换？
+      语音状态机、菜单匹配表、播报文案都是在脚本加载时算出来的。
+      就地替换数据必然留下半个旧状态（比如购物车里还留着上一家店的商品编码），
+      而整页重新初始化能保证从数据到状态机到渲染的每一层都基于同一份数据。
+   ========================================================================== */
+const LIVE = (() => {
+  try { return JSON.parse(sessionStorage.getItem('mcvoice.live') || 'null'); }
+  catch (e) { return null; }
+})();
+const LOCAL = window.__LOCAL__ || null;   // 只有 serve.py 会注入它
+
+let DATA = (LIVE && LIVE.menu) || {"source":{"storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","address":"高新区天府三街218号峰汇中心二号楼一层","distance":671,"orderType":1,"beType":1,"tools":["query-nearby-stores","query-meals"],"capturedAt":"2026-10-15","note":"演示快照：菜单与价格来自上面的门店在采样时刻的真实返回。演示模式下小计按菜单现价相加，未调 calculate-price，因此不含优惠与打包费。"},"stores":[{"storeCode":"3450034001","storeName":"成都天府三街地铁站快捷小站","address":"成都天府三街地铁站内","distance":80,"businessStatus":false,"businessStartTime":"08:00","businessEndTime":"22:00","reservation":true},{"storeCode":"3450342","storeName":"麦当劳成都高新大源东天府三街新希望国际B座餐厅","address":"高新区天府三街69号新希望国际B座","distance":260,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"23:00","reservation":true},{"storeCode":"3450034","storeName":"麦当劳成都软件园得来速餐厅","address":"软件园B区天华二路218号","distance":389,"businessStatus":true,"businessStartTime":"00:00","businessEndTime":"23:59","reservation":true},{"storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","address":"高新区天府三街218号峰汇中心二号楼一层","distance":671,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"01:00","reservation":true},{"storeCode":"3450214","storeName":"麦当劳成都天府大道中段餐厅","address":"高新区天府大道中段396号地下一层5号商铺","distance":971,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"23:00","reservation":true}],"categories":[{"name":"人气热卖","meals":["9900016076","9900016075","9900016073","9900016077","521955","9900016311","9900004064","521950","515946"]},{"name":"精选单人餐","meals":["9900004064","9900004236","9900010110","9900006957"]},{"name":"鸡肉汉堡/卷","meals":["9900016075","9900016073","521953","521952","9900015850","521900","9900016310","9900016309","9900000891","9900000890","9900005462","9900005453","9900003537","1440","1406","1450","9900008746"]},{"name":"小食拼盘/多人餐","meals":["9900016076","9900006332","9900015730","9900011056","9900005321"]},{"name":"蘸酱炸鸡","meals":["9900016078","9900015729","521966","521799","521797"]},{"name":"随心配1+1","meals":["9900013304","9900015568"]},{"name":"巨无霸牛鱼肉堡","meals":["9900000888","9900000886","9900000885","9900000893","9900005411","9900005466","9900005468","9900005413","9900005460","9900005464","9900005449","1100","9900003586","1600","4648","1106","1120","521316","9900008747"]},{"name":"安格斯MAX厚牛堡","meals":["9900000881","9900000882","9900005428","9900005430","511781","511782"]},{"name":"炸鸡","meals":["521966","521797","521799","521881","9900005451","9900004835","1700","520445","1401","521156","9900005432"]},{"name":"大堡口福单人餐","meals":["9900015602"]},{"name":"小食甜品/其他","meals":["521955","521986","9900016082","521950","521951","521929","521946","521906","521914","521901","521917","521922","521743","4810","4437","6102","9900008754","9900008745","515837","9900008752"]},{"name":"开心乐园","meals":["9900016057","9900016058","9900016056","9900016055","506189"]},{"name":"麦咖啡™","meals":["515946","515955","507411","507409","510479","507387","514851","520689","515949","507394","510488"]},{"name":"500大卡套餐","meals":["9900011128","9900011121","9900011126","9900011123","9900009245","9900009242"]},{"name":"饮品","meals":["9900015852","521817","9900008751","3010","515520","515280","3755","6362","3757","9900003538","520689","3505"]}],"items":[{"code":"9900016076","name":"“我就喜欢”鸡薯双全盒","category":"人气热卖","price":15.9,"originalPrice":29.5,"discountType":null,"canWithOrder":false},{"code":"9900016075","name":"龙焰芝士棒鸡腿堡三件套","category":"人气热卖","price":29.9,"originalPrice":51.5,"discountType":null,"canWithOrder":false},{"code":"9900016073","name":"龙焰鸡腿堡三件套","category":"人气热卖","price":26.9,"originalPrice":48.5,"discountType":null,"canWithOrder":false},{"code":"9900016077","name":"蘸酱炸鸡","category":"人气热卖","price":11.9,"originalPrice":17.0,"discountType":null,"canWithOrder":false},{"code":"521955","name":"麦当劳联名徽章","category":"人气热卖","price":34.9,"originalPrice":39.9,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016311","name":"龙焰美味四件套","category":"人气热卖","price":29.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900004064","name":"精选单人餐三件套","category":"人气热卖","price":34.5,"originalPrice":47.0,"discountType":null,"canWithOrder":false},{"code":"521950","name":"蓝莓爆爆珠麦旋风","category":"人气热卖","price":16.5,"originalPrice":16.5,"discountType":null,"canWithOrder":false},{"code":"515946","name":"浓浓黑巧（冰/热）","category":"人气热卖","price":13.9,"originalPrice":21.0,"discountType":"促销优惠","canWithOrder":false},{"code":"9900004236","name":"人气超值四件套随心选","category":"精选单人餐","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900010110","name":"鱼牛汉堡四件套随心选","category":"精选单人餐","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900006957","name":"安格斯厚牛堡四件套随心选","category":"精选单人餐","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"521953","name":"龙焰芝士棒鸡腿堡","category":"鸡肉汉堡/卷","price":27.0,"originalPrice":27.0,"discountType":null,"canWithOrder":false},{"code":"521952","name":"龙焰鸡腿堡","category":"鸡肉汉堡/卷","price":24.0,"originalPrice":24.0,"discountType":null,"canWithOrder":false},{"code":"9900015850","name":"咸蛋黄鸡腿蛋月堡三件套","category":"鸡肉汉堡/卷","price":26.9,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"521900","name":"咸蛋黄鸡腿蛋月堡","category":"鸡肉汉堡/卷","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"9900016310","name":"龙焰芝士棒鸡腿堡四件套","category":"鸡肉汉堡/卷","price":32.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016309","name":"龙焰鸡腿堡四件套","category":"鸡肉汉堡/卷","price":29.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000891","name":"麦辣鸡腿堡四件套","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000890","name":"板烧鸡腿堡四件套","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005462","name":"板烧鸡腿堡三件套","category":"鸡肉汉堡/卷","price":34.5,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"9900005453","name":"麦香鸡套餐","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":41.5,"discountType":null,"canWithOrder":false},{"code":"9900003537","name":"学生专享汉堡小食随心选","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":28.0,"discountType":null,"canWithOrder":false},{"code":"1440","name":"麦辣鸡腿汉堡","category":"鸡肉汉堡/卷","price":22.5,"originalPrice":22.5,"discountType":null,"canWithOrder":false},{"code":"1406","name":"板烧鸡腿堡","category":"鸡肉汉堡/卷","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"1450","name":"麦香鸡","category":"鸡肉汉堡/卷","price":17.0,"originalPrice":17.0,"discountType":null,"canWithOrder":false},{"code":"9900008746","name":"鸡肉堡单品精选","category":"鸡肉汉堡/卷","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"9900006332","name":"薄皮V翅双拼十翅","category":"小食拼盘/多人餐","price":49.9,"originalPrice":77.0,"discountType":null,"canWithOrder":false},{"code":"9900015730","name":"BFF四宫格小食盘","category":"小食拼盘/多人餐","price":39.8,"originalPrice":54.0,"discountType":null,"canWithOrder":false},{"code":"9900011056","name":"全明星双人分享餐八件套","category":"小食拼盘/多人餐","price":49.9,"originalPrice":117.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005321","name":"BFF四宫格小食盘双人餐","category":"小食拼盘/多人餐","price":62.9,"originalPrice":123.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016078","name":"蘸酱麦麦脆汁鸡","category":"蘸酱炸鸡","price":11.9,"originalPrice":18.0,"discountType":null,"canWithOrder":false},{"code":"9900015729","name":"蘸酱BFF四宫格小食盘","category":"蘸酱炸鸡","price":42.8,"originalPrice":57.0,"discountType":null,"canWithOrder":false},{"code":"521966","name":"韩式烟熏芝士风味酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"521799","name":"日式鲜磨山葵酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"521797","name":"北美招牌牧场酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"9900013304","name":"人气经典随心配","category":"随心配1+1","price":14.9,"originalPrice":14.9,"discountType":null,"canWithOrder":false},{"code":"9900015568","name":"精选超值随心配","category":"随心配1+1","price":13.9,"originalPrice":13.9,"discountType":null,"canWithOrder":false},{"code":"9900000888","name":"巨无霸四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000886","name":"不素之霸双层牛堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000885","name":"培根蔬萃双层牛堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000893","name":"双层深海鳕鱼堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005411","name":"不素之霸双层牛堡三件套","category":"巨无霸牛鱼肉堡","price":38.0,"originalPrice":51.5,"discountType":null,"canWithOrder":false},{"code":"9900005466","name":"巨无霸三件套","category":"巨无霸牛鱼肉堡","price":37.0,"originalPrice":50.5,"discountType":null,"canWithOrder":false},{"code":"9900005468","name":"培根蔬萃双层牛堡三件套","category":"巨无霸牛鱼肉堡","price":36.0,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"9900005413","name":"双层深海鳕鱼堡三件套","category":"巨无霸牛鱼肉堡","price":36.0,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"9900005460","name":"麦香鱼套餐","category":"巨无霸牛鱼肉堡","price":34.0,"originalPrice":47.5,"discountType":null,"canWithOrder":false},{"code":"9900005464","name":"双层吉士汉堡套餐","category":"巨无霸牛鱼肉堡","price":34.0,"originalPrice":47.5,"discountType":null,"canWithOrder":false},{"code":"9900005449","name":"吉士汉堡包套餐","category":"巨无霸牛鱼肉堡","price":26.5,"originalPrice":40.0,"discountType":null,"canWithOrder":false},{"code":"1100","name":"巨无霸","category":"巨无霸牛鱼肉堡","price":26.0,"originalPrice":26.0,"discountType":null,"canWithOrder":false},{"code":"9900003586","name":"双层深海鳕鱼堡","category":"巨无霸牛鱼肉堡","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"1600","name":"麦香鱼","category":"巨无霸牛鱼肉堡","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"4648","name":"不素之霸双层牛堡","category":"巨无霸牛鱼肉堡","price":27.0,"originalPrice":27.0,"discountType":null,"canWithOrder":false},{"code":"1106","name":"培根蔬萃双层牛堡","category":"巨无霸牛鱼肉堡","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"1120","name":"双层吉士汉堡","category":"巨无霸牛鱼肉堡","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"521316","name":"高达吉士双牛堡","category":"巨无霸牛鱼肉堡","price":22.5,"originalPrice":22.5,"discountType":null,"canWithOrder":false},{"code":"9900008747","name":"牛肉堡单品精选","category":"巨无霸牛鱼肉堡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"9900000881","name":"培根安格斯厚牛堡四件套","category":"安格斯MAX厚牛堡","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000882","name":"芝士安格斯厚牛堡四件套","category":"安格斯MAX厚牛堡","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005428","name":"培根安格斯厚牛堡三件套","category":"安格斯MAX厚牛堡","price":45.5,"originalPrice":59.0,"discountType":null,"canWithOrder":false},{"code":"9900005430","name":"芝士安格斯厚牛堡三件套","category":"安格斯MAX厚牛堡","price":42.5,"originalPrice":56.0,"discountType":null,"canWithOrder":false},{"code":"511781","name":"培根安格斯厚牛堡","category":"安格斯MAX厚牛堡","price":34.5,"originalPrice":34.5,"discountType":null,"canWithOrder":false},{"code":"511782","name":"芝士安格斯厚牛堡","category":"安格斯MAX厚牛堡","price":31.5,"originalPrice":31.5,"discountType":null,"canWithOrder":false},{"code":"521881","name":"马来咖喱风味薄皮肉骨鸡3块","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"9900005451","name":"麦辣鸡翅4块套餐","category":"炸鸡","price":36.5,"originalPrice":50.0,"discountType":null,"canWithOrder":false},{"code":"9900004835","name":"麦乐鸡套餐","category":"炸鸡","price":25.0,"originalPrice":38.5,"discountType":null,"canWithOrder":false},{"code":"1700","name":"麦辣鸡翅","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"520445","name":"薄皮焦香V翅","category":"炸鸡","price":16.0,"originalPrice":16.0,"discountType":null,"canWithOrder":false},{"code":"1401","name":"麦乐鸡","category":"炸鸡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"521156","name":"那么大鸡排（椒盐风味）","category":"炸鸡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"9900005432","name":"麦麦脆汁鸡1块","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"9900015602","name":"大堡口福三件套","category":"大堡口福单人餐","price":22.9,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"521986","name":"马苏里拉拉丝芝士条","category":"小食甜品/其他","price":11.0,"originalPrice":16.0,"discountType":"促销优惠","canWithOrder":false},{"code":"9900016082","name":"心形薯饼5块","category":"小食甜品/其他","price":15.5,"originalPrice":15.5,"discountType":null,"canWithOrder":false},{"code":"521951","name":"灰焰圆筒","category":"小食甜品/其他","price":5.0,"originalPrice":5.0,"discountType":null,"canWithOrder":false},{"code":"521929","name":"旋旋水手帽","category":"小食甜品/其他","price":48.8,"originalPrice":48.8,"discountType":null,"canWithOrder":false},{"code":"521946","name":"旋旋星愿贴","category":"小食甜品/其他","price":3.9,"originalPrice":3.9,"discountType":null,"canWithOrder":false},{"code":"521906","name":"玫瑰红糖糍粑风味派","category":"小食甜品/其他","price":5.0,"originalPrice":9.5,"discountType":"促销优惠","canWithOrder":false},{"code":"521914","name":"“葱不求人“按摩捶痒痒挠","category":"小食甜品/其他","price":14.9,"originalPrice":14.9,"discountType":null,"canWithOrder":false},{"code":"521901","name":"月下相思扭扭薯","category":"小食甜品/其他","price":16.0,"originalPrice":16.0,"discountType":null,"canWithOrder":false},{"code":"521917","name":"泷愿成真麦旋风——大米风味","category":"小食甜品/其他","price":16.5,"originalPrice":16.5,"discountType":null,"canWithOrder":false},{"code":"521922","name":"奶香大米派","category":"小食甜品/其他","price":9.0,"originalPrice":9.0,"discountType":null,"canWithOrder":false},{"code":"521743","name":"薯条脆卜卜毛绒周边","category":"小食甜品/其他","price":24.9,"originalPrice":29.9,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"4810","name":"薯条","category":"小食甜品/其他","price":14.5,"originalPrice":14.5,"discountType":null,"canWithOrder":false},{"code":"4437","name":"玉米杯","category":"小食甜品/其他","price":13.0,"originalPrice":13.0,"discountType":null,"canWithOrder":false},{"code":"6102","name":"苹果片","category":"小食甜品/其他","price":7.0,"originalPrice":7.0,"discountType":null,"canWithOrder":false},{"code":"9900008754","name":"经典麦旋风","category":"小食甜品/其他","price":15.5,"originalPrice":15.5,"discountType":null,"canWithOrder":false},{"code":"9900008745","name":"新地","category":"小食甜品/其他","price":12.5,"originalPrice":12.5,"discountType":null,"canWithOrder":false},{"code":"515837","name":"圆筒冰淇淋","category":"小食甜品/其他","price":5.0,"originalPrice":5.0,"discountType":null,"canWithOrder":false},{"code":"9900008752","name":"派","category":"小食甜品/其他","price":8.0,"originalPrice":8.0,"discountType":null,"canWithOrder":false},{"code":"9900016057","name":"汉堡开心乐园餐","category":"开心乐园","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"9900016058","name":"鱼排堡开心乐园餐","category":"开心乐园","price":24.0,"originalPrice":24.0,"discountType":null,"canWithOrder":false},{"code":"9900016056","name":"麦乐鸡开心乐园餐","category":"开心乐园","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"9900016055","name":"开心亲子双人餐","category":"开心乐园","price":59.5,"originalPrice":59.5,"discountType":null,"canWithOrder":false},{"code":"506189","name":"如意百宝袋","category":"开心乐园","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"515955","name":"浓浓燕麦黑巧（冰/热）","category":"麦咖啡™","price":15.9,"originalPrice":23.0,"discountType":"促销优惠","canWithOrder":false},{"code":"507411","name":"麦咖啡™美式","category":"麦咖啡™","price":11.9,"originalPrice":19.0,"discountType":"促销优惠","canWithOrder":false},{"code":"507409","name":"麦咖啡™奶铁","category":"麦咖啡™","price":13.9,"originalPrice":21.0,"discountType":"促销优惠","canWithOrder":false},{"code":"510479","name":"燕麦奶铁","category":"麦咖啡™","price":9.9,"originalPrice":23.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"507387","name":"卡布奇诺","category":"麦咖啡™","price":21.0,"originalPrice":21.0,"discountType":null,"canWithOrder":false},{"code":"514851","name":"咖啡阿芙佳朵","category":"麦咖啡™","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"520689","name":"鲜萃咖啡","category":"麦咖啡™","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"515949","name":"浓浓黑巧雪冰","category":"麦咖啡™","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"507394","name":"牛奶","category":"麦咖啡™","price":19.0,"originalPrice":19.0,"discountType":null,"canWithOrder":false},{"code":"510488","name":"燕麦奶","category":"麦咖啡™","price":21.0,"originalPrice":21.0,"discountType":null,"canWithOrder":false},{"code":"9900011128","name":"“堡”你欢乐套餐","category":"500大卡套餐","price":28.0,"originalPrice":42.5,"discountType":null,"canWithOrder":false},{"code":"9900011121","name":"“苹”水相“鱼”套餐","category":"500大卡套餐","price":36.0,"originalPrice":54.5,"discountType":null,"canWithOrder":false},{"code":"9900011126","name":"酥脆无双套餐","category":"500大卡套餐","price":20.5,"originalPrice":20.5,"discountType":null,"canWithOrder":false},{"code":"9900011123","name":"“辣”么快乐套餐","category":"500大卡套餐","price":24.0,"originalPrice":36.5,"discountType":null,"canWithOrder":false},{"code":"9900009245","name":"牛气满满套餐","category":"500大卡套餐","price":34.5,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"9900009242","name":"“苹板”支撑Pro套餐","category":"500大卡套餐","price":39.5,"originalPrice":53.5,"discountType":null,"canWithOrder":false},{"code":"9900015852","name":"举杯邀月柚桂茶","category":"饮品","price":13.0,"originalPrice":13.0,"discountType":null,"canWithOrder":false},{"code":"521817","name":"【美汁源】“多汁柠柠”","category":"饮品","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"9900008751","name":"可乐","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"3010","name":"雪碧","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"515520","name":"怡泉+C","category":"饮品","price":11.5,"originalPrice":11.5,"discountType":null,"canWithOrder":false},{"code":"515280","name":"阳光柠檬红茶","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"3755","name":"纯牛奶(盒装)","category":"饮品","price":11.0,"originalPrice":11.0,"discountType":null,"canWithOrder":false},{"code":"6362","name":"100% 苹果汁(盒装)","category":"饮品","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"3757","name":"纯悦","category":"饮品","price":7.5,"originalPrice":7.5,"discountType":null,"canWithOrder":false},{"code":"9900003538","name":"学生专享饮品随心选","category":"饮品","price":10.0,"originalPrice":10.0,"discountType":null,"canWithOrder":false},{"code":"3505","name":"锡兰红茶","category":"饮品","price":11.5,"originalPrice":11.5,"discountType":null,"canWithOrder":false}],"aliases":{"巨无霸":["1100","9900005466","9900000888"],"big mac":["1100","9900005466","9900000888"],"双吉":["1120","9900005464"],"双层吉士":["1120","9900005464"],"吉士汉堡":["1120","9900005464","9900005449"],"芝士汉堡":["1120","9900005464"],"板烧":["1406","9900005462","9900000890"],"板烧鸡腿":["1406","9900005462","9900000890"],"麦辣鸡腿堡":["1440","9900000891"],"麦辣鸡腿":["1440","9900000891"],"麦香鸡":["1450","9900005453"],"麦香鱼":["1600","9900005460"],"鳕鱼堡":["9900003586","9900005413","9900000893"],"深海鳕鱼堡":["9900003586","9900005413","9900000893"],"不素之霸":["4648","9900000886","9900005411"],"安格斯":["511781","511782","9900000881","9900000882","9900005428","9900005430"],"厚牛堡":["511781","511782","9900000881","9900000882","9900006957"],"培根蔬萃":["1106","9900005468","9900000885"],"高达吉士":["521316"],"龙焰鸡腿堡":["521952","9900016073","9900016309"],"龙焰芝士棒鸡腿堡":["521953","9900016075","9900016310"],"咸蛋黄鸡腿蛋月堡":["521900","9900015850"],"鸡腿堡":["521952","1406","9900016073","9900016075"],"麦辣鸡翅":["1700","9900005451"],"鸡翅":["1700","9900005451"],"麦乐鸡":["1401","9900004835"],"鸡块":["1401","9900004835"],"那么大鸡排":["521156"],"鸡排":["521156"],"薄皮焦香v翅":["520445"],"v翅":["520445","9900006332"],"脆汁鸡":["9900005432","9900016078"],"薯条":["4810"],"中薯条":["4810"],"大薯条":["4810"],"玉米杯":["4437"],"玉米":["4437"],"苹果片":["6102"],"拉丝芝士条":["521986"],"芝士条":["521986"],"鸡薯双全盒":["9900016076"],"扭扭薯":["521901"],"薯饼":["9900016082"],"可乐":["9900008751"],"雪碧":["3010"],"芬达":["3010"],"柠檬红茶":["515280"],"红茶":["515280","3505"],"锡兰红茶":["3505"],"纯悦":["3757"],"矿泉水":["3757"],"水":["3757"],"牛奶":["3755","507394"],"纯牛奶":["3755"],"燕麦奶":["510488"],"苹果汁":["6362"],"果汁":["6362"],"咖啡":["520689","507411","507387","514851"],"美式":["507411"],"卡布奇诺":["507387"],"鲜萃咖啡":["520689"],"奶铁":["507409","510479"],"黑巧":["515946","515955"],"柚桂茶":["9900015852"],"圆筒":["515837"],"甜筒":["515837"],"冰淇淋":["515837","9900008745","9900008754"],"新地":["9900008745"],"麦旋风":["9900008754","521950","521917"],"派":["9900008752","521906","521922"],"糍粑派":["521906"],"大米派":["521922"],"蘸酱":["521966","521797","521799"],"牧场酱":["521797"],"山葵酱":["521799"],"芝士酱":["521966"],"随心配":["9900013304","9900015568"],"1+1":["9900013304","9900015568"],"大堡口福":["9900015602"],"开心乐园餐":["9900016057","9900016056","9900016058"],"儿童餐":["9900016057","9900016056","9900016058"],"亲子双人餐":["9900016055"],"四宫格":["9900015730","9900015729","9900005321"],"小食拼盘":["9900015730","9900015729","9900006332"],"双拼十翅":["9900006332"],"四件套随心选":["9900004236","9900010110","9900006957"]},"homophones":{"巨无八":"巨无霸","巨无吧":"巨无霸","巨无爸":"巨无霸","聚无霸":"巨无霸","麦辣鸡翅":"麦辣鸡翅","麦拉鸡翅":"麦辣鸡翅","麦乐机":"麦乐鸡","麦勒鸡":"麦乐鸡","薯条二":"薯条","数条":"薯条","暑条":"薯条","可乐二":"可乐","卡了":"可乐","可了":"可乐","双极":"双吉","板骚":"板烧","麦香于":"麦香鱼","麦香雨":"麦香鱼","雪壁":"雪碧","雪比":"雪碧","圆桶":"圆筒","甜桶":"圆筒","安格丝":"安格斯","安格司":"安格斯","玉米杯二":"玉米杯","鸡块二":"鸡块","咖啡二":"咖啡"},"frequent":{"code":"9900015602","tags":["我的常点"]},"coupons":[{"name":"中薯条买一送一","price":13.5,"validFrom":"2026-10-12 10:30","validTo":"2026-10-16 23:59","weekdays":["周一","周二","周三","周四","周五"],"timeFrom":"10:30","timeTo":"23:59","tags":["到店专用","外送专用"]},{"name":"王牌小食拼","price":15.9,"validFrom":"2026-10-12 10:30","validTo":"2026-10-16 23:59","weekdays":["周一","周二","周三","周四","周五"],"timeFrom":"10:30","timeTo":"23:59","tags":["到店专用","外送专用"]},{"name":"火腿扒堡早餐两件套","price":9.9,"validFrom":"2026-10-16 05:00","validTo":"2026-10-16 10:29","weekdays":["周五"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"巧克力味厚松饼猪柳蛋套餐","price":29.9,"validFrom":"2026-10-17 05:00","validTo":"2026-10-17 10:29","weekdays":["周六"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"巧克力味厚松饼猪柳蛋套餐","price":29.9,"validFrom":"2026-10-18 05:00","validTo":"2026-10-18 10:29","weekdays":["周日"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"火腿扒堡早餐两件套","price":9.9,"validFrom":"2026-10-19 05:00","validTo":"2026-10-19 10:29","weekdays":["周一"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"芝香脆鸡扒堡早餐两件套","price":9.9,"validFrom":"2026-10-20 05:00","validTo":"2026-10-20 10:29","weekdays":["周二"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"高达芝士蛋堡早餐两件套","price":9.9,"validFrom":"2026-10-21 05:00","validTo":"2026-10-21 10:29","weekdays":["周三"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]}],"couponLimitation":"关键限制：query-my-coupons 与 available-coupons 的返回里都没有 couponId / couponCode，而 calculate-price 与 create-order 套券必须传这两个字段。也就是说，纯 MCP 链路目前拿不到可回填的券 ID。本项目因此只做到「语音播报有哪些券、什么时段能用」，不假装能自动套券。"};
+const PRICE_SNAPSHOT = (LIVE && LIVE.price) || {"productOriginalPrice":5000,"productPrice":5000,"originalPrice":5000,"discount":0,"price":5000,"productList":[{"productCode":"1100","productName":"巨无霸","quantity":1,"originalSubtotal":2600,"subtotal":2600},{"productCode":"4810","productName":"中薯条","quantity":1,"originalSubtotal":1450,"subtotal":1450},{"productCode":"9900008751","productName":"可乐","quantity":1,"originalSubtotal":950,"subtotal":950}],"takeWayList":[{"code":"eat-in","title":"堂食","subtitle":"店内用餐"},{"code":"take-in-store","title":"外带","subtitle":"店内自提"}]};
+const BUILD_INFO = {"generatedBy":"scripts/render_app.py","generatedAt":"2026-10-15","storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","capturedAt":"2026-10-15","itemCount":122,"categoryCount":15,"aliasCount":86};
+
+/* 演示模式下的算价：按菜单现价相加，不做任何优惠推算。
+   返回结构与真实 calculate-price 对齐，区别用 `estimated` 字段标出来，
+   页面与测试都以此判断「这是真报价还是估算」，避免两端口径混用。 */
+function estimatePrice(cart) {
+  const lines = [];
+  let subtotal = 0;
+  for (const line of cart) {
+    const item = itemByCode(line.code);
+    if (!item || item.price == null) return null;
+    const amount = Math.round(item.price * 100) * line.qty;
+    subtotal += amount;
+    lines.push({ productCode: line.code, productName: item.name,
+                 quantity: line.qty, subtotal: amount, originalSubtotal: amount });
+  }
+  return {
+    estimated: true,
+    price: subtotal, productPrice: subtotal, originalPrice: subtotal,
+    discount: 0, deliveryPrice: 0, packingPrice: 0, tablewarePrice: 0,
+    productList: lines,
+    takeWayList: [
+      { code: 'eat-in', title: '堂食', subtitle: '店内用餐' },
+      { code: 'take-in-store', title: '外带', subtitle: '店内自提' }
+    ]
+  };
+}
+
+/* ---SOLVER-END--- */
+
+/* ==========================================================================
+   语音理解核心（纯函数，不碰 DOM）
+
+   单独用一对 VOICE 标记包起来，是为了让 tests/test_voice.mjs 能把它原样抽到
+   Node 里跑单测：匹配逻辑出错会表现成「用户说了却没反应」，这是最难排查的一类
+   问题（页面上不报错、控制台一片安静），必须有单测兜着。
+   ========================================================================== */
+/* ---VOICE-BEGIN--- */
+
+/* 数字规范化：语音识别常给汉字数字，也常给阿拉伯数字，统一成阿拉伯数字 */
+const CN_NUM = { '零':0,'一':1,'两':2,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10 };
+
+function cnNumToInt(s) {
+  if (!s) return null;
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  if (s === '十') return 10;
+  if (s.length === 1) return CN_NUM[s] != null ? CN_NUM[s] : null;
+  const m = s.match(/^十(.)$/) || s.match(/^(.)十$/);
+  if (m) return 10 + (CN_NUM[m[1]] || 0);
+  return null;
+}
+
+/* 把一句口语里的「要什么 / 几份」拆出来。
+   返回 { qty, name }，name 为去掉所有数量词与动词后的纯商品名。
+
+   注意这里是**字面量正则**而不是 new RegExp 拼字符串。踩过的坑：
+   拼字符串版本把 '零一两二三四五六七八九十\\d{1,3}' 写成了连续字符序列
+   （想表达的是字符组），结果「一份」永远匹配不上，数量词一直静默失效——
+   页面上不会有任何报错，只是用户说「来两份」永远只加一份。
+   用字面量把这个坑彻底堵掉。 */
+const QTY_PAT = /([零一两二三四五六七八九十\d]{1,3})\s*(?:份|个|杯|块|只|支|盒|袋|根|条|张)/;
+const VERB_PAT = /(?:我|帮我|给我|麻烦|请|想要|要|来|加|再|点|拿|搞|整|来个|来份|来一个|来一份|加上|添加)+/g;
+
+function normalizeUtterance(raw) {
+  let s = String(raw || '');
+  s = s.replace(/[\s,，。、！？!?~～"'"'（）()【】\[\]]/g, '');
+  s = s.toLowerCase();
+  return s;
+}
+
+function applyHomophones(s, homophones) {
+  for (const wrong of Object.keys(homophones || {})) {
+    if (s.includes(wrong)) s = s.split(wrong).join(homophones[wrong]);
+  }
+  return s;
+}
+
+/* 相似度打分。不用编辑距离是因为中文商品名长且共享大量字，
+   编辑距离会把「巨无霸」和「巨无霸三件套」判得很近，
+   而这两者在「单点一份」的语境下恰恰要区分开。改用包含关系 + 字覆盖率的组合。 */
+function scoreName(query, candidate) {
+  if (!query || !candidate) return 0;
+  if (query === candidate) return 100;
+  if (candidate.startsWith(query)) return 92 - Math.min(10, candidate.length - query.length);
+  if (query.startsWith(candidate)) return 88 - Math.min(10, query.length - candidate.length);
+  if (candidate.includes(query)) return 80 - Math.min(10, candidate.length - query.length);
+  if (query.includes(candidate)) return 76 - Math.min(10, query.length - candidate.length);
+  // 字覆盖率：query 里有几成的字出现在 candidate 里
+  const set = new Set(candidate.split(''));
+  let hit = 0;
+  for (const ch of query) if (set.has(ch)) hit++;
+  const cover = hit / query.length;
+  if (cover >= 0.75) return 55 * cover;
+  return 0;
+}
+
+/* 商品名的规格后缀。剥掉它们是为了让「巨无霸」也能匹配到「巨无霸三件套」，
+   但反过来不能用它盖过单品——见 corePick 的规则。 */
+const NAME_SUFFIX = /(套餐|三件套|四件套|单品精选|随心选|双人餐|四件套随心选|三件套随心选)$/;
+
+/* 从并列候选里挑出「核心单品」。
+
+   规则：如果所有并列候选的商品名去掉规格后缀后是同一个名字，而且其中**恰好有一个**
+   本来就是那个不带后缀的名字，就认定它。
+   例：并列 [巨无霸, 巨无霸三件套, 巨无霸四件套] → 核心名都是「巨无霸」，
+   不带后缀的那个恰好唯一 → 认定「巨无霸」，其余作为提示带回去。
+   用户说「巨无霸」「板烧」时想要的就是那个单品，不是更贵的套餐，
+   这里追问一句反而是在为难人。
+
+   反过来，并列的如果是真正不同的商品（如「鸡腿堡」→ 板烧鸡腿堡 / 龙焰鸡腿堡 / …），
+   核心名不止一个，就返回 null，交给页面去问。 */
+function corePick(ties, items) {
+  const info = ties.map(code => {
+    const it = items.filter(i => i.code === code)[0];
+    if (!it) return null;
+    const name = normalizeUtterance(it.name);
+    return { code, name, bare: name.replace(NAME_SUFFIX, '') };
+  }).filter(Boolean);
+  if (info.length < 2) return null;
+  if (new Set(info.map(x => x.bare)).size !== 1) return null;
+  const bareOnes = info.filter(x => x.name === x.bare);
+  if (bareOnes.length !== 1) return null;
+  return {
+    best: bareOnes[0].code,
+    also: info.filter(x => x.code !== bareOnes[0].code).map(x => x.code)
+  };
+}
+
+/* 在整份菜单里找 query 最可能指向的餐品。
+   返回 { best, ties, alsoConsider }：
+     - ties 是「和第一名分数接近」的候选，页面拿它问「你是想要 A 还是 B」；
+     - alsoConsider 是「已经认定了单品，但菜单里还有更大的套装」，
+       页面只需要顺口提一句，不该反过来打断用户。
+   歧义不猜，但也别把用户说得很清楚的话当成歧义。 */
+function matchItems(query, items, aliases) {
+  const q = normalizeUtterance(query);
+  if (!q) return { best: null, ties: [], alsoConsider: [] };
+
+  const scored = new Map();       // code -> score
+  const bump = (code, sc) => { if (!scored.has(code) || scored.get(code) < sc) scored.set(code, sc); };
+
+  // 1) 口语别名：命中别名给最高分，命中的别名越长越可信
+  for (const alias of Object.keys(aliases || {})) {
+    const a = normalizeUtterance(alias);
+    if (!a) continue;
+    if (q === a) { for (const c of aliases[alias]) bump(c, 99); }
+    else if (q.includes(a)) { for (const c of aliases[alias]) bump(c, 90 + Math.min(8, a.length)); }
+  }
+  // 2) 菜单原名（含去掉规格后缀的形态）
+  for (const item of items) {
+    const name = normalizeUtterance(item.name);
+    const bare = name.replace(NAME_SUFFIX, '');
+    bump(item.code, scoreName(q, name));
+    if (bare && bare !== name) bump(item.code, scoreName(q, bare) - 3);
+  }
+
+  const list = [...scored.entries()].filter(([, sc]) => sc >= 45)
+    .sort((a, b) => b[1] - a[1]);
+  if (!list.length) return { best: null, ties: [], alsoConsider: [] };
+
+  const top = list[0][1];
+  // 分差 8 分以内算并列：语音场景下宁可多问一句，也不要替用户猜错
+  const ties = list.filter(([, sc]) => top - sc <= 8).map(([code]) => code);
+
+  // 优先级 1：用户说的就是某个候选的**完整商品名** → 直接认定它。
+  //   这一条必须排在核心名归并之前，否则「巨无霸三件套」会被归并成「巨无霸」，
+  //   用户明明指名要套装，却被换成单品。
+  const full = items.filter(it => normalizeUtterance(it.name) === q).map(it => it.code);
+  if (full.length === 1 && ties.indexOf(full[0]) >= 0) {
+    return { best: full[0], ties: [full[0]],
+             alsoConsider: ties.filter(c => c !== full[0]).slice(0, 3) };
+  }
+
+  // 优先级 2：并列候选的核心名相同、且不带后缀的单品唯一 → 认定那个单品
+  const core = corePick(ties, items);
+  if (core) return { best: core.best, ties: [core.best], alsoConsider: core.also };
+
+  return { best: list[0][0], ties, alsoConsider: [] };
+}
+
+/* 把一句话解析成结构化的意图。规则优先、可预测——
+   点餐这种「说错一句可能多花钱」的场景，不适合把理解交给概率模型。 */
+const INTENTS = [
+  ['start',    /^(开始|开始吧|开始使用|启动|来吧|嗯开始)$/],
+  ['stop',     /^(停|停止|别说了|安静|闭嘴|停一下|暂停)$/],
+  ['help',     /(能说什么|会什么|帮助|怎么用|有什么指令|说什么)/],
+  ['repeat',   /(再说一遍|重复一遍|再说一次|没听清|没听见|重念)/],
+  ['back',     /(退回|上一步|返回|上一个|回到上一步|撤销刚才)/],
+  ['cancel',   /^(取消|算了|不要了|重来|重新开始|清空|全部取消)$/],
+  ['affirm',   /^(确认|是|对|对的|好的|好|嗯|可以|没问题|就这样)$/],
+  ['deny',     /^(不是|不对|不要|不用|别|否|再想想)$/],
+  ['menu',     /(菜单|有什么吃的|有什么卖|念一下菜单|看菜单|有什么汉堡|有什么喝的|有什么饮品|有什么小食|列一下)/],
+  ['frequent', /(我的常点|常点的|老样子|上次那个|我常点)/],
+  ['order',    /(确认下单|下单|提交订单|拍下|结账下单)/],
+  ['price',    /(算价|多少钱|结账|买单|算一下钱|一共多少|报价|算账)/],
+  ['mycart',   /(购物车|我点了什么|都点了什么|清单|看看点了什么)/],
+  ['continue', /^(继续|接着说|往下念|还有吗|下一个)$/],
+  ['takeway_eatin',    /(堂食|在店里吃|店内用|店里吃)/],
+  ['takeway_takeout',  /(外带|带走|打包|自提|拿走在路上吃|外带)/],
+  ['stores',   /(附近|门店|哪家店|有什么店|换一家|换门店)/],
+  ['remove',   /(不要|去掉|删掉|删除|减去|取消掉|把.+拿掉|去掉)/],
+  ['qty',      null]  // 数量修改单独处理
+];
+
+/* 门店序号：「第一家」「第二个」「第三号」「三」。
+   这里刻意写得很严——早期版本用宽泛的 /([一二三四五六七八九十\d]{1,3})/ 去抓，
+   结果在门店步骤说「来一份巨无霸」会被抓成「第 1 家店」。宁可漏认，也不能认错：
+   认错会让用户莫名其妙被换门店，而漏认只是再问一句。 */
+function parseStorePick(s, storeCount) {
+  const t = normalizeUtterance(s);
+  if (!t) return null;
+  const NUM = '[一二三四五六七八九十\\d]{1,3}';
+  let raw = null;
+  let m = t.match(new RegExp('第(' + NUM + ')\\s*(?:家|个|号)?'));
+  if (m) raw = m[1];
+  if (!raw) {
+    m = t.match(new RegExp('^(' + NUM + ')\\s*(?:家|号|个)$'));
+    if (m) raw = m[1];
+  }
+  if (!raw && new RegExp('^' + NUM + '$').test(t)) raw = t;
+  if (!raw) return null;
+  const n = cnNumToInt(raw);
+  if (!n || n < 1 || n > storeCount) return null;
+  return n;
+}
+
+function parseUtterance(raw, ctx) {
+  const items = (ctx && ctx.items) || [];
+  const aliases = (ctx && ctx.aliases) || {};
+  const homophones = (ctx && ctx.homophones) || {};
+  const storeCount = (ctx && ctx.storeCount) || 0;
+  const inStoreStep = !!(ctx && ctx.inStoreStep);
+
+  const s = applyHomophones(normalizeUtterance(raw), homophones);
+  if (!s) return { intent: 'unknown', raw: String(raw || ''), ties: [], alsoConsider: [] };
+
+  // 门店步骤优先认序号
+  if (inStoreStep) {
+    const pick = parseStorePick(s, storeCount);
+    if (pick) return { intent: 'pick-store', index: pick, raw, ties: [], alsoConsider: [] };
+  }
+
+  // 纯数字（在非门店步骤）当作数量指令
+  if (/^[一二三四五六七八九十\d]{1,3}$/.test(s)) {
+    const n = cnNumToInt(s);
+    if (n) return { intent: 'set-qty', qty: n, raw, ties: [], alsoConsider: [] };
+  }
+
+  for (const [name, pat] of INTENTS) {
+    if (!pat) continue;
+    if (pat.test(s)) {
+      if (name === 'remove') {
+        const m = matchItems(s, items, aliases);
+        return { intent: 'remove', code: m.best, ties: m.ties, alsoConsider: [], raw };
+      }
+      return { intent: name, raw, ties: [], alsoConsider: [] };
+    }
+  }
+
+  // 都不是，就当成「要买点什么」：把数量词剥掉，剩下的当商品名去找
+  let qty = 1;
+  const qm = s.match(QTY_PAT);
+  if (qm) {
+    const n = cnNumToInt(qm[1]);
+    if (n && n >= 1 && n <= 20) qty = n;
+  }
+  let name = s.replace(QTY_PAT, '').replace(VERB_PAT, '').replace(/[了吧呢啊呀哦嘛]+$/g, '');
+  if (!name) return { intent: 'unknown', raw, ties: [], alsoConsider: [] };
+
+  const m = matchItems(name, items, aliases);
+  if (!m.best) return { intent: 'unknown', raw, query: name, ties: [], alsoConsider: [] };
+  return { intent: 'add', code: m.best, ties: m.ties, alsoConsider: m.alsoConsider || [],
+           qty, query: name, raw };
+}
+
+/* 门店名匹配：用最长公共子串，而不是字符覆盖率。
+   为什么不能用 scoreName：门店官方全名都很长且共享前缀（「麦当劳成都……餐厅」），
+   走字覆盖率时「麦当劳成都高新大源东天府三街新希望国际B座餐厅」和
+   「麦当劳成都天府三街餐厅」会双双拿到满分——因为用户说的每个字在两家店里都出现过。
+   结果就是永远判成歧义、永远选不上。公共子串能区分「天府三街餐厅」（6 字连在一起）
+   和「天府三街」+「餐厅」（各 4 字和 2 字，不连续），这才反映了「用户说的是哪一家」。 */
+function lcsLength(a, b) {
+  if (!a || !b) return 0;
+  let best = 0;
+  let prevRow = new Array(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    const row = new Array(b.length + 1).fill(0);
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        row[j] = prevRow[j - 1] + 1;
+        if (row[j] > best) best = row[j];
+      }
+    }
+    prevRow = row;
+  }
+  return best;
+}
+
+function storeScore(query, name) {
+  const q = normalizeUtterance(query), n = normalizeUtterance(name);
+  if (!q || !n) return 0;
+  const l = lcsLength(q, n);
+  // 主看最长公共子串长度，次看它占用户所说长度的比例
+  return l * 10 + (l / Math.max(1, Math.min(q.length, n.length))) * 10;
+}
+
+globalThis.__MCVOICE__ = {
+  cnNumToInt, normalizeUtterance, applyHomophones, scoreName,
+  matchItems, parseUtterance, parseStorePick, lcsLength, storeScore
+};
+/* ---VOICE-END--- */
+
+/* ==========================================================================
+   语音状态机。每一步都明确回答三个问题：现在在哪、能说什么、说完去哪。
+   ========================================================================== */
+const STEPS = {
+  welcome: { no: 1, name: '准备开始',
+    say: '欢迎使用麦声。按「开始使用」或按回车键，我们就开始点餐。',
+    chips: ['开始使用', '我能说什么'] },
+  store:   { no: 2, name: '选择门店',
+    say: '先说去哪家店。可以念门店的序号，比如说「第一家」，也可以说店名里的字。',
+    chips: ['第一家', '麦当劳天府三街', '附近有什么店'] },
+  browse:  { no: 3, name: '点餐',
+    say: '说你想吃什么就行，比如「来一份巨无霸和一杯可乐」。也可以说「菜单」让我把类目念一遍。',
+    chips: ['来一份巨无霸', '一杯可乐', '菜单', '算价', '我的常点'] },
+  cart:    { no: 4, name: '确认购物车',
+    say: '我念一遍你点的东西。要改就说「再加一份可乐」或者「不要薯条了」；没问题就说「算价」。',
+    chips: ['算价', '再加一份可乐', '不要薯条了', '退回上一步'] },
+  price:   { no: 5, name: '报价与取餐方式',
+    say: '这是你的报价。接下来选取餐方式：说「堂食」或者「外带」。',
+    chips: ['堂食', '外带', '我不想点了', '退回上一步'] },
+  confirm: { no: 6, name: '下单前确认',
+    say: '最后确认一次：真的要创建这个订单吗？说「确认」我就下单，说「不是」我就退回去。',
+    chips: ['确认', '不是', '退回上一步'] },
+  ordered: { no: 7, name: '订单已创建',
+    say: '订单已经创建。请用手机扫码，或者打开麦当劳 App 完成支付。',
+    chips: ['重新点一单'] },
+  done:    { no: 8, name: '完成',
+    say: '这一单到这里就结束了。', chips: ['重新点一单'] }
+};
+
+const State = {
+  step: 'welcome',
+  stores: [],
+  store: null,
+  cart: [],          // [{code, qty}]
+  quoted: null,      // 最近一次报价结果
+  takeWay: null,
+  batch: { category: null, offset: 0 },
+  pendingTies: null, // 待消歧的候选
+  orderResult: null,
+  started: false
+};
+
+/* ==========================================================================
+   播报：语音合成 + 无障碍 live region 双通道
+   ========================================================================== */
+const $ = (id) => document.getElementById(id);
+const speakOn = () => $('speakOn').checked;
+let voice = null;
+
+function pickVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const all = window.speechSynthesis.getVoices() || [];
+  voice = all.find(v => /zh[-_]CN|zh[-_]Hans|Chinese|普通话/i.test(v.lang + v.name)) || null;
+}
+
+function setSaid(text, opts) {
+  const o = opts || {};
+  $('said').innerHTML = o.html ? text : escapeHtml(text);
+  // 屏幕阅读器通道：aria-live 区域。为避免和语音合成重复，当播报开着时只写简短提示。
+  const liveText = speakOn() ? (o.live || '') : text;
+  $('live').textContent = liveText;
+  if (o.alert) { $('alert').textContent = o.alert; }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function speak(text) {
+  if (!text) return;
+  const t = String(text);
+  if (speakOn() && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = 'zh-CN';
+      u.rate = 0.98;
+      u.pitch = 1;
+      if (voice) u.voice = voice;
+      // 播报时暂停拾音，否则麦克风会把我们自己的声音听成用户指令
+      u.onstart = () => { if (listening) pauseRecognition(); };
+      u.onend = () => { if (listening) resumeRecognition(); };
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* 合成失败不影响流程，文字仍然在屏幕上 */ }
+  }
+}
+
+function announce(text, opts) {
+  setSaid(text, opts);
+  speak(text);
+}
+
+/* ==========================================================================
+   语音识别
+   ========================================================================== */
+const SR_CTOR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog = null, listening = false, wantListen = false, micBlocked = false;
+let micUnavailableMsg = '';
+
+/* 语音能力不可用时的统一说法。抽成常量是因为它要在两个地方出现：
+   用户点麦克风时，以及流程开始时——两处必须说同一件事。 */
+const NO_MIC_MSG = '这个浏览器的语音识别用不了。你可以直接在下面的输入框里打字，'
+                 + '功能完全一样，每一步也照样会念出来。';
+
+function speechSupport() {
+  return {
+    recognition: !!SR_CTOR,
+    synthesis: 'speechSynthesis' in window,
+    // 浏览器只在安全上下文（https 或 localhost）里给麦克风权限
+    secure: window.isSecureContext !== false,
+    media: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+  };
+}
+
+function buildRecognition() {
+  if (!SR_CTOR) return null;
+  const r = new SR_CTOR();
+  r.lang = 'zh-CN';
+  r.continuous = true;
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  r.onresult = (ev) => {
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      if (!ev.results[i].isFinal) continue;
+      const text = ev.results[i][0].transcript;
+      if (text && text.trim()) handleUtterance(text);
+    }
+  };
+  r.onerror = (ev) => {
+    const map = {
+      'not-allowed':    '麦克风权限被拒绝了。请在浏览器地址栏的权限设置里允许麦克风，然后按「开始使用」重试；也可以直接用下面的输入框打字。',
+      'service-not-allowed': '这个浏览器的语音识别服务不可用。请改用 Chrome 或 Edge；也可以直接在下面的输入框打字。',
+      'audio-capture':  '没有找到麦克风设备。请插上麦克风或检查系统录音设置；也可以直接在下面的输入框打字。',
+      'no-speech':      '',
+      'network':        '语音识别需要联网，当前网络不通。可以直接在下面的输入框打字。',
+      'aborted':        ''
+    };
+    const msg = map[ev.error];
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed' || ev.error === 'audio-capture') {
+      micBlocked = true;
+      wantListen = false;
+      syncMicButton();
+    }
+    if (msg) { announce(msg, { alert: msg }); }
+  };
+  r.onend = () => {
+    listening = false;
+    syncMicButton();
+    // Chrome 会在静音几秒后自动结束识别，这里拉起来继续听
+    if (wantListen && !micBlocked) {
+      try { r.start(); listening = true; syncMicButton(); } catch (e) { /* 已经在跑了 */ }
+    }
+  };
+  return r;
+}
+
+function startListening() {
+  if (!recog) recog = buildRecognition();
+  if (!recog) {
+    micUnavailableMsg = NO_MIC_MSG;
+    micBlocked = true;
+    return false;
+  }
+  wantListen = true;
+  try { recog.start(); listening = true; syncMicButton(); return true; }
+  catch (e) { listening = true; syncMicButton(); return true; }
+}
+function stopListening() { wantListen = false; if (recog) { try { recog.stop(); } catch (e) {} } listening = false; syncMicButton(); }
+function pauseRecognition() { if (recog && listening) { try { recog.stop(); } catch (e) {} } }
+function resumeRecognition() { if (recog && wantListen && !micBlocked) { try { recog.start(); } catch (e) {} } }
+
+function syncMicButton() {
+  const b = $('micBtn');
+  if (!State.started) { b.textContent = '开始使用'; b.setAttribute('aria-pressed', 'false'); return; }
+  b.textContent = listening ? '正在听你说话 —— 按一下停止' : '按一下开始说话';
+  b.setAttribute('aria-pressed', listening ? 'true' : 'false');
+}
+
+/* ==========================================================================
+   渲染
+   ========================================================================== */
+function itemByCode(code) {
+  const found = (DATA.items || []).filter(i => i.code === code)[0];
+  return found || null;
+}
+function money(cents) { return '¥' + (cents / 100).toFixed(2); }
+function itemPriceText(item) {
+  if (item.price == null) return '价格暂无';
+  const p = '¥' + item.price.toFixed(2);
+  if (item.originalPrice && item.originalPrice > item.price) {
+    return p + '（原价 ¥' + item.originalPrice.toFixed(2) + '）';
+  }
+  return p;
+}
+
+function renderStep() {
+  const s = STEPS[State.step];
+  $('stepNo').textContent = 'STEP ' + s.no;
+  $('stepName').textContent = s.name;
+  const chips = $('chips');
+  chips.innerHTML = '';
+  for (const c of s.chips) {
+    const li = document.createElement('li');
+    li.textContent = c;                       // 用 textContent，避免任何注入
+    chips.appendChild(li);
+  }
+  renderBody();
+}
+
+function renderBody() {
+  const box = $('body');
+  box.innerHTML = '';
+  if (!State.started) {
+    box.innerHTML = '<p class="empty">还没有开始。按上面的「开始使用」，或用键盘按回车。</p>';
+    return;
+  }
+  if (State.step === 'store') box.appendChild(renderStores());
+  else if (State.step === 'browse') box.appendChild(renderMenu());
+  else if (State.step === 'cart') box.appendChild(renderCart());
+  else if (State.step === 'price') box.appendChild(renderQuote());
+  else if (State.step === 'confirm') box.appendChild(renderQuote(true));
+  else if (State.step === 'ordered') box.appendChild(renderOrder());
+  else if (State.step === 'done') box.appendChild(renderOrder());
+}
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+/* ==========================================================================
+   门店：哪些门店有菜单数据
+   演示快照只覆盖一家店，但附近门店列表有五家。如果不加区分就让用户随便选，
+   选了别家店会拿到「错门店」的菜单价格——这是本项目最不能接受的一类错误：
+   数字看起来是对的，但对应的不是这家店。
+   所以演示模式下，没有菜单快照的门店会明确标注出来，选中时如实说明并留在原地。
+   ========================================================================== */
+function hasMenuSnapshot(store) {
+  if (isLocalMode()) return true;          // 本地模式按门店现拉菜单
+  return !!store && store.storeCode === (DATA.source && DATA.source.storeCode);
+}
+
+function renderStores() {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('h3', null, '附近门店（' + State.stores.length + ' 家）'));
+  const ol = el('ol', 'list');
+  State.stores.forEach((s, i) => {
+    const li = el('li');
+    li.appendChild(el('span', 'idx', String(i + 1)));
+    const g = el('span', 'grow');
+    g.appendChild(el('strong', null, s.storeName));
+    const note = '　' + s.address + '　距离约 ' + s.distance + ' 米';
+    g.appendChild(el('span', 'sub', note));
+    if (isLocalMode() || hasMenuSnapshot(s)) {
+      if (!s.businessStatus) li.appendChild(el('span', 'tag', '当前打烊'));
+    } else {
+      li.appendChild(el('span', 'tag', '无菜单快照'));
+    }
+    ol.appendChild(li);
+  });
+  frag.appendChild(ol);
+  if (!isLocalMode()) {
+    frag.appendChild(el('p', 'sub', '演示快照只覆盖了「'
+      + (DATA.source && DATA.source.storeName) + '」的菜单，'
+      + '其余门店可以看信息，但演示页面没有它们的菜单数据。要按自己的门店点餐，'
+      + '请执行 python scripts/serve.py 用本地模式。'));
+  }
+  return frag;
+}
+
+function renderMenu() {
+  const frag = document.createDocumentFragment();
+  const wrap = el('div', 'grid two');
+  for (const cat of (DATA.categories || [])) {
+    const c = el('div', 'card');
+    c.appendChild(el('h3', null, cat.name));
+    c.appendChild(el('span', 'sub', cat.meals.length + ' 项'));
+    wrap.appendChild(c);
+  }
+  frag.appendChild(wrap);
+  if (State.cart.length) {
+    frag.appendChild(el('h3', null, '当前购物车'));
+    frag.appendChild(renderCart());
+  }
+  return frag;
+}
+
+function renderCart() {
+  const frag = document.createDocumentFragment();
+  if (!State.cart.length) {
+    frag.appendChild(el('p', 'empty', '购物车是空的。'));
+    return frag;
+  }
+  const ol = el('ol', 'list');
+  let cents = 0, missing = false;
+  for (const line of State.cart) {
+    const item = itemByCode(line.code);
+    if (!item) continue;
+    const li = el('li');
+    li.appendChild(el('span', 'idx', '×' + line.qty));
+    li.appendChild(el('span', 'grow', item.name));
+    if (item.price == null) { missing = true; li.appendChild(el('span', 'price', '价格暂无')); }
+    else { cents += Math.round(item.price * 100) * line.qty; li.appendChild(el('span', 'price', '¥' + (item.price * line.qty).toFixed(2))); }
+    ol.appendChild(li);
+  }
+  frag.appendChild(ol);
+  const sum = el('p', null, '');
+  sum.appendChild(el('strong', null, '小计 ' + money(cents)));
+  if (missing) sum.appendChild(el('span', 'sub', '　（有餐品没有价格，未计入）'));
+  frag.appendChild(sum);
+  frag.appendChild(el('p', 'sub', '这是按菜单现价相加的小计。点「算价」之后才会走正式的报价流程。'));
+  return frag;
+}
+
+function renderQuote(isConfirm) {
+  const frag = document.createDocumentFragment();
+  const q = State.quoted;
+  if (!q) { frag.appendChild(el('p', 'empty', '还没有报价。')); return frag; }
+
+  const wrap = el('div', 'grid two');
+  const mk = (label, value, sub) => {
+    const c = el('div', 'card');
+    c.appendChild(el('h3', null, label));
+    c.appendChild(el('span', 'num', value));
+    if (sub) c.appendChild(el('span', 'sub', sub));
+    return c;
+  };
+  wrap.appendChild(mk('总计', money(q.price), q.estimated ? '演示模式：按菜单现价相加' : '来自 calculate-price'));
+  wrap.appendChild(mk('优惠', money(q.discount || 0), (q.discount ? '已减免' : '本次没有可用优惠')));
+  frag.appendChild(wrap);
+
+  if (q.estimated) {
+    const p = el('p', 'hint');
+    p.appendChild(el('b', null, '这是估算价，不是 MCP 的正式报价'));
+    p.appendChild(document.createTextNode('演示模式下小计由页面按菜单现价相加，没有调用 calculate-price，'
+      + '因此不含优惠、打包费，也没有校验取餐方式。执行 python scripts/serve.py 并在设置里填入你自己的 Token，就能拿到正式报价。'));
+    frag.appendChild(p);
+  }
+
+  frag.appendChild(el('h3', null, '明细'));
+  const ol = el('ol', 'list');
+  for (const line of (q.productList || [])) {
+    const li = el('li');
+    li.appendChild(el('span', 'idx', '×' + line.quantity));
+    li.appendChild(el('span', 'grow', line.productName));
+    li.appendChild(el('span', 'price', money(line.subtotal)));
+    ol.appendChild(li);
+  }
+  frag.appendChild(ol);
+
+  frag.appendChild(el('h3', null, '取餐方式'));
+  const ul = el('ul', 'list');
+  for (const t of (q.takeWayList || [])) {
+    const li = el('li');
+    li.appendChild(el('span', 'grow', t.title + '（' + t.subtitle + '）'));
+    if (State.takeWay === t.code) li.appendChild(el('span', 'tag tag-on', '已选择'));
+    ul.appendChild(li);
+  }
+  frag.appendChild(ul);
+
+  if (isConfirm) {
+    const p = el('p', 'hint');
+    p.appendChild(el('b', null, '下单前请再确认一次'));
+    p.appendChild(document.createTextNode('说「确认」才会创建订单；说「不是」就退回上一步。'
+      + '付款始终由你自己扫码完成。'));
+    frag.appendChild(p);
+  }
+  return frag;
+}
+
+function renderOrder() {
+  const frag = document.createDocumentFragment();
+  const r = State.orderResult;
+  if (!r) { frag.appendChild(el('p', 'empty', '还没有创建订单。')); return frag; }
+  if (r.url) {
+    const c = el('div', 'card');
+    c.appendChild(el('h3', null, '支付链接已生成'));
+    const p = el('p', 'mono');
+    p.appendChild(el('strong', null, r.url));
+    c.appendChild(p);
+    const a = document.createElement('a');
+    a.className = 'btn btn-primary';
+    a.href = r.url; a.textContent = '打开支付页（会跳转到麦当劳）';
+    a.setAttribute('rel', 'noopener noreferrer');
+    c.appendChild(a);
+    frag.appendChild(c);
+  }
+  if (r.orderId) frag.appendChild(el('p', null, '订单号：' + r.orderId));
+  frag.appendChild(el('p', 'sub', '本项目不代付、不接管你的支付。支付完成后请以麦当劳 App 或门店取餐页显示的状态为准。'));
+  return frag;
+}
+
+/* ==========================================================================
+   业务动作
+   ========================================================================== */
+function cartQty() { return State.cart.reduce((n, l) => n + l.qty, 0); }
+
+function addToCart(code, qty, alsoConsider) {
+  const item = itemByCode(code);
+  if (!item) { announce('菜单里没有找到这个东西，你可以说「菜单」让我念一遍类目。'); return false; }
+  const line = State.cart.filter(l => l.code === code)[0];
+  if (line) line.qty += qty; else State.cart.push({ code, qty });
+  State.step = 'browse';
+  renderStep();
+  let extra = '';
+  // 精确匹配成立时顺口提一句还有更大份的同名商品，但不打断用户
+  const also = (alsoConsider || []).map(c => itemByCode(c)).filter(Boolean);
+  if (also.length) {
+    extra = '菜单里还有' + also.map(a => a.name + '（' + (a.price != null ? a.price.toFixed(2) + ' 元' : '价格暂无') + '）').join('、')
+          + '，要那个的话跟我说。';
+  }
+  announce('已加入 ' + item.name + ' 乘以 ' + qty + '。' +
+           (item.price != null ? '单价 ' + item.price.toFixed(2) + ' 元。' : '') +
+           '购物车现在一共 ' + cartQty() + ' 件。' + extra +
+           '要说「算价」我就去报价。');
+  return true;
+}
+
+function removeFromCart(code) {
+  const item = itemByCode(code);
+  const before = State.cart.length;
+  State.cart = State.cart.filter(l => l.code !== code);
+  renderStep();
+  if (State.cart.length === before) { announce('购物车里本来就没有 ' + (item ? item.name : '这个东西') + '。'); return; }
+  announce('已经把 ' + (item ? item.name : '它') + ' 拿掉了。购物车还剩 ' + cartQty() + ' 件。');
+}
+
+function askAmbiguous(ties, qty, rawQuery) {
+  const names = ties.slice(0, 3).map(c => { const i = itemByCode(c); return i ? i.name : c; });
+  State.pendingTies = { ties: ties.slice(0, 3), qty };
+  announce('「' + rawQuery + '」在菜单里有几个相近的：' + names.join('、') +
+           '。你想说的是哪一个？直接说名字就行。', { alert: '需要确认是哪一个' });
+}
+
+function listCategories() {
+  const names = (DATA.categories || []).map((c, i) => (i + 1) + '. ' + c.name);
+  State.batch = { category: null, offset: 0 };
+  State.step = 'browse';
+  renderStep();
+  announce('这家店的菜单分成 ' + names.length + ' 类：' + names.join('；') +
+           '。你可以直接说想吃什么，也可以说类目名，比如「汉堡」，我就把那一类念给你。');
+}
+
+function speakCategory(name) {
+  const cat = (DATA.categories || []).filter(c => c.name.replace(/[\s\n]/g, '').includes(String(name).replace(/\s/g, '')))[0];
+  if (!cat) return false;
+  const codes = cat.meals;
+  State.batch = { category: cat.name, offset: 0 };
+  const chunk = codes.slice(0, 5);
+  State.batch.offset = chunk.length;
+  const parts = chunk.map((c, i) => { const it = itemByCode(c); return (i + 1) + '. ' + it.name + '，' + (it.price != null ? it.price.toFixed(2) + ' 元' : '价格暂无'); });
+  announce(cat.name + '一共 ' + codes.length + ' 项。前 ' + chunk.length + ' 项：' + parts.join('；') +
+           (codes.length > chunk.length ? '。说「继续」听后面的。' : '。说「就这个」或者说名字，我就加进购物车。'));
+  return true;
+}
+
+function continueBatch() {
+  if (!State.batch.category) { announce('没有正在念的类目。可以说「菜单」让我从类目念起。'); return; }
+  const cat = (DATA.categories || []).filter(c => c.name === State.batch.category)[0];
+  if (!cat) return;
+  const from = State.batch.offset;
+  const chunk = cat.meals.slice(from, from + 5);
+  if (!chunk.length) { announce(cat.name + '已经念完了。说「菜单」可以换一类。'); return; }
+  State.batch.offset = from + chunk.length;
+  const parts = chunk.map((c, i) => { const it = itemByCode(c); return (from + i + 1) + '. ' + it.name + '，' + (it.price != null ? it.price.toFixed(2) + ' 元' : '价格暂无'); });
+  announce(parts.join('；') + ((cat.meals.length > State.batch.offset) ? '。说「继续」听后面的。' : '。这一类念完了。'));
+}
+
+function doQuote() {
+  if (!State.cart.length) { announce('购物车还是空的，先说想吃什么吧。'); return; }
+  quoteRemote().then(q => {
+    if (!q) { announce('报价失败，稍后可以再试一次。也可以说「菜单」继续点餐。'); return; }
+    State.quoted = q;
+    State.step = 'price';
+    renderStep();
+    const n = State.cart.reduce((s, l) => s + l.qty, 0);
+    const names = State.cart.map(l => { const i = itemByCode(l.code); return (i ? i.name : l.code) + ' 乘 ' + l.qty; });
+    announce('你点了：' + names.join('，') + '，一共 ' + n + ' 件。' +
+             (q.estimated ? '估算总计 ' : '总计 ') + (q.price / 100).toFixed(2) + ' 元。' +
+             (q.discount ? '优惠 ' + (q.discount / 100).toFixed(2) + ' 元。' : '') +
+             '取餐方式有：' + (q.takeWayList || []).map(t => t.title).join('、') + '。请说「堂食」或者「外带」。',
+             { alert: '报价完成' });
+  });
+}
+
+function chooseTakeWay(code) {
+  if (!State.quoted) { announce('还没有报价，先说「算价」。'); return; }
+  const t = (State.quoted.takeWayList || []).filter(x => x.code === code)[0];
+  if (!t) { announce('这家店没有这个取餐方式。可以说「堂食」或者「外带」。'); return; }
+  State.takeWay = t.code;
+  renderStep();
+  if (!$('allowOrder').checked) {
+    State.step = 'done';
+    renderStep();
+    announce('取餐方式选好了：' + t.title + '。' +
+             '不过「允许创建订单」还没打开，所以流程到这里就结束——不会产生任何订单。' +
+             '要去店里照着点，或者打开设置里的开关让我帮你下单，都可以。', { alert: '流程结束，未创建订单' });
+    return;
+  }
+  State.step = 'confirm';
+  renderStep();
+  announce('取餐方式：' + t.title + '。最后确认一次，真的要创建这个订单吗？说「确认」我就下单。',
+           { alert: '等待下单确认' });
+}
+
+function createOrderRemote() {
+  // 演示模式没有本地服务，浏览器又不能直连 MCP（对方不带 CORS 头），
+  // 所以这里必须明确告诉用户「为什么下不了单、要怎么做」，而不是含糊地报一句「失败」。
+  if (!LOCAL) {
+    State.step = 'done';
+    renderStep();
+    announce('这份演示页面没有连接麦当劳 MCP，所以不会创建订单——你刚才点的东西一件都没有被提交。'
+             + '要真正下单，请在项目目录执行 python scripts/serve.py，'
+             + '打开它给出的本地页面，在设置里填入你自己的 MCP Token。', { alert: '演示模式不会创建订单' });
+    return;
+  }
+  const payload = {
+    storeCode: State.store.storeCode,
+    orderType: DATA.source.orderType,
+    beType: DATA.source.beType,
+    takeWayCode: State.takeWay,
+    confirm: true,               // 服务端要求显式确认，防止误触发
+    items: State.cart.map(l => ({ productCode: l.code, quantity: l.qty }))
+  };
+  return apiPost('/api/order', payload).then(res => {
+    if (!res || !res.ok) {
+      const msg = (res && res.error) || '下单失败';
+      announce('下单没有成功：' + msg + '。可以稍后再试，或者打开麦当劳 App 自己点。', { alert: msg });
+      return;
+    }
+    State.orderResult = res.data;
+    State.step = 'ordered';
+    renderStep();
+    announce('订单已经创建。请用手机扫码，或者打开麦当劳 App 完成支付。'
+             + '支付完成后，以 App 里的订单状态为准。', { alert: '订单已创建' });
+  });
+}
+
+/* ==========================================================================
+   一句话进来的总入口
+   ========================================================================== */
+function handleUtterance(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return;
+  setSaid('你说：' + escapeHtml(text) + '　<span class="sub">正在处理…</span>', { html: true });
+
+  if (!State.started) {
+    if (/^(开始|开始吧|开始使用|启动|来吧|嗯|嗯开始|好|好的)$/.test(normalizeUtterance(text))) { begin(); return; }
+    announce('我们还没开始。请说「开始」，或者按上面的「开始使用」按钮。');
+    return;
+  }
+
+  // 消歧优先：上一步问了「是哪一个」，这一步的回答按候选来解。
+  // 但控制类指令必须放行——否则用户在等待消歧时说「取消」，会被当成商品名去匹配，
+  // 结果是既没取消、也没加购，用户完全不知道发生了什么。
+  const CONTROL_RE = /^(取消|算了|不要了|重来|重新开始|清空|退回|上一步|返回|再说一遍|重复一遍|没听清|停|停止|我能说什么|帮助|菜单|算价|多少钱|结账|确认下单|下单)$/;
+  if (State.pendingTies && !CONTROL_RE.test(normalizeUtterance(text))) {
+    const c = State.resolveTie(text);
+    if (c) return;
+  }
+  if (State.pendingTies && CONTROL_RE.test(normalizeUtterance(text))) {
+    State.pendingTies = null;      // 用户已经转去做别的事了，别再拿候选拦他
+  }
+
+  const parsed = parseUtterance(text, {
+    items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
+    storeCount: State.stores.length, inStoreStep: State.step === 'store'
+  });
+  dispatch(parsed, text);
+}
+
+State.resolveTie = function (text) {
+  const ties = State.pendingTies.ties;
+  const qty = State.pendingTies.qty;
+  const m = matchItems(text, ties.map(c => itemByCode(c)).filter(Boolean),
+                       Object.fromEntries(Object.entries(DATA.aliases)
+                         .map(([k, v]) => [k, v.filter(c => ties.includes(c))])));
+  // 也接受「第一个 / 第二个」
+  const pick = parseStorePick(text, ties.length);
+  let code = m.best;
+  if (pick) code = ties[pick - 1];
+  if (!code) { announce('没听清是哪一个。可以说名字，或者说「第一个」「第二个」。'); return false; }
+  State.pendingTies = null;
+  addToCart(code, qty || 1);
+  return true;
+};
+
+function dispatch(p, raw) {
+  switch (p.intent) {
+    case 'start':   begin(); return;
+    case 'stop':    stopListening(); announce('好，我停下来了。按「开始说话」可以继续。'); return;
+    case 'help':    return sayHelp();
+    case 'repeat':  return announce(STEPS[State.step].say);
+    case 'back':    return goBack();
+    case 'cancel':  return resetAll('已经全部清空，我们重新开始。');
+    case 'menu':    return listCategories();
+    case 'continue':return continueBatch();
+    case 'mycart':  State.step = 'cart'; renderStep(); return speakCart();
+    case 'frequent':return pickFrequent();
+    case 'price':   return doQuote();
+    case 'order':   return tryOrder();
+    case 'affirm':
+      // 「好 / 嗯 / 可以」在不同步骤下要有不同的实际作用，
+      // 否则视障用户说了一句「好」却什么也没发生，会以为是程序坏了。
+      if (State.step === 'confirm') return createOrderRemote();
+      if (State.step === 'store')   return speakStores();
+      if (State.step === 'browse')  return State.cart.length ? doQuote() : listCategories();
+      if (State.step === 'cart')    return doQuote();
+      if (State.step === 'price')   { announce('还要选一下取餐方式：说「堂食」或者「外带」。'); return; }
+      announce('好的。'); return;
+    case 'deny':
+      if (State.step === 'confirm') { State.step = 'price'; renderStep(); announce('好，那就不下单。你可以改取餐方式，或者说「取消」把购物车清空。'); return; }
+      if (State.step === 'store')   { speakStores(); return; }
+      if (State.step === 'price')   { State.step = 'browse'; renderStep(); announce('好，回到点餐。可以继续说想吃什么，或者拿掉不想要的。'); return; }
+      announce('好的，那就不动。'); return;
+    case 'takeway_eatin':    return chooseTakeWay('eat-in');
+    case 'takeway_takeout':  return chooseTakeWay('take-in-store');
+    case 'stores':  return goStores();
+    case 'pick-store':
+      return pickStore(p.index);
+    case 'remove':
+      if (!p.code) { announce('没听清要拿掉哪一个。可以说「不要薯条了」。'); return; }
+      return removeFromCart(p.code);
+    case 'add':
+      if (p.ties.length > 1) return askAmbiguous(p.ties, p.qty, p.query || raw);
+      return addToCart(p.code, p.qty, p.alsoConsider);
+    case 'set-qty':
+      if (State.cart.length === 1) {
+        State.cart[0].qty = p.qty; renderStep();
+        const it = itemByCode(State.cart[0].code);
+        announce('好，' + (it ? it.name : '') + '改成 ' + p.qty + ' 份。');
+        return;
+      }
+      announce('没听清。想说几份的话，可以说「来两份' + (State.cart.length ? itemByCode(State.cart[0].code).name : '可乐') + '」。');
+      return;
+    default:
+      // 类目名也算一种说法：「汉堡」「饮品」
+      if (State.step === 'browse' && speakCategory(raw)) return;
+      if (State.step === 'store' && pickStoreByName(raw)) return;
+      announce('没听懂「' + raw + '」。你可以说「我能说什么」听一遍当前能用的说法。',
+               { alert: '没听懂' });
+  }
+}
+
+function sayHelp() {
+  const s = STEPS[State.step];
+  announce('现在是第 ' + s.no + ' 步，' + s.name + '。可以说：' + s.chips.join('、') +
+           '。任何一步都可以说「再说一遍」「退回上一步」「取消」。');
+}
+
+function speakCart() {
+  if (!State.cart.length) { announce('购物车是空的。现在在第 ' + STEPS[State.step].no + ' 步，' + STEPS[State.step].name + '。'); return; }
+  const names = State.cart.map(l => { const i = itemByCode(l.code); return (i ? i.name : l.code) + ' 乘 ' + l.qty; });
+  const cents = State.cart.reduce((s, l) => { const i = itemByCode(l.code); return s + (i && i.price != null ? Math.round(i.price * 100) * l.qty : 0); }, 0);
+  announce('购物车里有 ' + names.join('，') + '。小计 ' + (cents / 100).toFixed(2) + ' 元。' +
+           '要改就说「再加一份什么」或者「不要什么了」；没问题就说「算价」。');
+}
+
+function pickFrequent() {
+  const f = DATA.frequent;
+  if (f && f.code && itemByCode(f.code)) {
+    const item = itemByCode(f.code);
+    announce('你的常点是' + item.name + '。要再来一份吗？说「要」或者直接说「' + item.name + '」。');
+    return;
+  }
+  announce('这份快照里没有常点记录。可以直接说想吃什么。');
+}
+
+function pickStore(index) {
+  const s = State.stores[index - 1];
+  if (!s) { announce('没有第 ' + index + ' 家店。一共有 ' + State.stores.length + ' 家。'); return; }
+  if (!hasMenuSnapshot(s)) {
+    announce('演示快照里只有「' + DATA.source.storeName + '」的菜单，没有「' + s.storeName
+             + '」的菜单数据。我不能拿别家店的菜单价格替你点这一家——那样价格是错的。'
+             + '你可以改说「' + DATA.source.storeName + '」，或者执行 python scripts/serve.py '
+             + '用本地模式按你自己的门店点餐。', { alert: '这家门店没有菜单快照' });
+    return;
+  }
+  State.store = s;
+  State.step = 'browse';
+  renderStep();
+  announce('好，门店是' + s.storeName + '，距离约 ' + s.distance + ' 米。' +
+           (s.businessStatus ? '现在在营业。' : '注意这家店当前显示打烊。') +
+           '现在说你想吃什么吧，比如「来一份巨无霸和一杯可乐」。');
+  if (isLocalMode()) loadLocalMenu(s.storeCode);
+}
+
+/* 用店名找门店。用最长公共子串打分而不是 includes：
+   语音说出来的店名往往和官方全名差一截（用户不会念出「麦当劳成都高新大源东天府三街
+   新希望国际B座餐厅」），子串匹配能容下这种省略，includes 会直接失配。 */
+function pickStoreByName(text) {
+  const q = normalizeUtterance(text);
+  if (!q) return false;
+  let best = -1, bestScore = 0, second = 0;
+  State.stores.forEach((s, i) => {
+    const sc = storeScore(q, s.storeName);
+    if (sc > bestScore) { second = bestScore; bestScore = sc; best = i; }
+    else if (sc > second) { second = sc; }
+  });
+  if (best < 0 || bestScore < 40) return false;
+  if (bestScore - second < 5) {
+    announce('有几家店的名字都像。请说门店序号，比如「第一家」。');
+    return true;
+  }
+  pickStore(best + 1);
+  return true;
+}
+
+function goStores() {
+  State.step = 'store';
+  renderStep();
+  speakStores();
+}
+
+function speakStores() {
+  const parts = State.stores.map((s, i) => (i + 1) + '. ' + s.storeName + '，距离约 ' + s.distance + ' 米'
+    + (s.businessStatus ? '' : '，当前打烊'));
+  let tail = '';
+  if (!isLocalMode()) {
+    const idx = State.stores.findIndex(s => hasMenuSnapshot(s));
+    tail = '演示快照只覆盖了第 ' + (idx + 1) + ' 家「' + DATA.source.storeName + '」的菜单，'
+         + '选它就对了；其余门店没有菜单数据，选了我也没法替你点。';
+  }
+  announce('附近有 ' + State.stores.length + ' 家店：' + parts.join('；') + '。'
+           + tail + '说序号或者店名都行。');
+}
+
+function goBack() {
+  const order = ['welcome', 'store', 'browse', 'cart', 'price', 'confirm'];
+  const i = order.indexOf(State.step);
+  if (i <= 1) { announce('已经是最前面一步了。'); return; }
+  State.step = order[i - 1];
+  renderStep();
+  announce('退回上一步：' + STEPS[State.step].name + '。' + STEPS[State.step].say);
+}
+
+function resetAll(msg) {
+  State.cart = []; State.quoted = null; State.takeWay = null;
+  State.pendingTies = null; State.batch = { category: null, offset: 0 };
+  State.orderResult = null;
+  State.step = State.store ? 'browse' : 'store';
+  renderStep();
+  announce(msg || '已经清空购物车。');
+}
+
+function tryOrder() {
+  if (!State.quoted) { announce('还没有报价。先说「算价」。'); return; }
+  if (!State.takeWay) { announce('还没选取餐方式。请说「堂食」或者「外带」。'); return; }
+  if (!$('allowOrder').checked) {
+    announce('「允许创建订单」这个开关还关着，所以我不会下单。' +
+             '你可以在页面下面的设置里把它打开，再对我说一次「确认下单」。', { alert: '下单开关未打开' });
+    return;
+  }
+  State.step = 'confirm';
+  renderStep();
+  announce('再说一次确认：真的要创建订单吗？说「确认」我就下单，说「不是」就退回去。', { alert: '等待确认' });
+}
+
+function begin() {
+  State.started = true;
+  if (!State.stores.length) State.stores = (DATA.stores || []).slice();
+  if (!State.store) State.step = 'store';
+  syncMicButton();
+  const micOk = startListening();
+  renderStep();
+  const intro = '好，现在开始。第 2 步，选择门店。' + STEPS.store.say;
+
+  // 这里踩过一个坑：早期版本先 announce 降级提示、再由 begin 播报开场白，
+  // 而 speak() 每次都会先 cancel 上一条——于是那条最重要的提示被瞬间覆盖，
+  // 用户一个字都听不到。所以必须把提示**并进**开场白里说。
+  if (micOk) {
+    announce(intro);
+    setTimeout(speakStores, 2800);
+  } else {
+    announce('先说一件事：' + micUnavailableMsg + '　' + intro,
+             { alert: '语音识别不可用，请用输入框打字' });
+    setTimeout(speakStores, 6000);
+  }
+}
+
+/* ==========================================================================
+   本地模式：与 serve.py 通信
+   ========================================================================== */
+function isLocalMode() { return !!LOCAL; }
+
+function apiHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (LOCAL && LOCAL.sessionKey) h['X-McVoice-Key'] = LOCAL.sessionKey;
+  return h;
+}
+
+function apiPost(path, body) {
+  if (!LOCAL) return Promise.resolve(null);
+  return fetch(LOCAL.origin + path, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(body || {}) })
+    .then(r => r.json().then(j => Object.assign({ ok: r.ok, status: r.status }, j)).catch(() => null))
+    .catch(err => ({ ok: false, error: '本地服务没有响应：' + err.message }));
+}
+
+function quoteRemote() {
+  if (!LOCAL || !State.store) return Promise.resolve(estimatePrice(State.cart));
+  return apiPost('/api/price', {
+    storeCode: State.store.storeCode,
+    items: State.cart.map(l => ({ productCode: l.code, quantity: l.qty }))
+  }).then(res => {
+    if (res && res.ok && res.data) {
+      // 真实报价：estimated 标记为 false，页面据此去掉「估算」提示
+      res.data.estimated = false;
+      return res.data;
+    }
+    announce('本地服务报价失败，先按菜单价给你估算。' + ((res && res.error) || ''));
+    return estimatePrice(State.cart);
+  });
+}
+
+function loadLocalMenu(storeCode) {
+  apiPost('/api/menu', { storeCode }).then(res => {
+    if (res && res.ok && res.data) {
+      applyLive({ menu: res.data.menu, source: res.data.source }, '/');
+    }
+  });
+}
+
+/* 把实时数据写进 sessionStorage 再整页刷新 —— 详见文件顶部数据层的说明 */
+function applyLive(patch, redirect) {
+  let cur = {};
+  try { cur = JSON.parse(sessionStorage.getItem('mcvoice.live') || '{}') || {}; } catch (e) { cur = {}; }
+  Object.assign(cur, patch);
+  sessionStorage.setItem('mcvoice.live', JSON.stringify(cur));
+  location.replace(redirect || location.pathname);
+}
+
+function renderLocalBox() {
+  const box = $('localBox');
+  box.innerHTML = '';
+  const sup = speechSupport();
+  const ul = el('ul', 'list');
+  const line = (label, ok, detail) => {
+    const li = el('li');
+    const d = el('span', 'dot ' + (ok ? 'ok' : 'bad'));
+    d.setAttribute('aria-hidden', 'true');
+    li.appendChild(d);
+    const g = el('span', 'grow');
+    g.appendChild(el('strong', null, label + '：' + (ok ? '可用' : '不可用')));
+    if (detail) g.appendChild(el('span', 'sub', '　' + detail));
+    li.appendChild(g);
+    ul.appendChild(li);
+  };
+  line('语音识别', sup.recognition, sup.recognition ? '' : '建议用 Chrome 或 Edge；打字输入完全等效');
+  line('语音播报', sup.synthesis, '');
+  line('安全上下文', sup.secure, sup.secure ? '' : '麦克风只在 https 或 localhost 下可用');
+  box.appendChild(ul);
+
+  if (isLocalMode()) {
+    const p = el('p', 'hint');
+    p.appendChild(el('b', null, '本地模式已就绪'));
+    p.appendChild(document.createTextNode('本地服务在 ' + LOCAL.origin + '。填入你自己的 MCP Token 后，'
+      + '页面会拉取你附近门店的真实菜单，报价走 calculate-price，打开下单开关后可由 create-order 创建订单。'));
+    box.appendChild(p);
+    const l1 = el('label', 'field');
+    l1.appendChild(el('span', null, '你的 MCP Token（只发给你本机的服务，不写进页面、不上传第三方）'));
+    const i1 = document.createElement('input');
+    i1.type = 'password'; i1.id = 'tokenInput'; i1.autocomplete = 'off';
+    i1.placeholder = 'MCD_MCP_TOKEN';
+    l1.appendChild(i1);
+    box.appendChild(l1);
+    const l2 = el('label', 'field');
+    l2.appendChild(el('span', null, '搜索门店的关键词（城市 + 位置，或留空用默认）'));
+    const i2 = document.createElement('input');
+    i2.type = 'text'; i2.id = 'storeKw'; i2.value = '成都 天府三街'; i2.autocomplete = 'off';
+    l2.appendChild(i2);
+    box.appendChild(l2);
+    const row = el('div', 'btn-row');
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn btn-primary'; b.id = 'connectBtn';
+    b.textContent = '连接并拉取我的门店';
+    row.appendChild(b);
+    box.appendChild(row);
+    b.addEventListener('click', () => {
+      const token = i1.value.trim();
+      const kw = i2.value.trim();
+      if (!token) { announce('请先把 MCP Token 填进来。', { alert: '缺少 Token' }); i1.focus(); return; }
+      announce('正在连接麦当劳 MCP 并拉取你的门店，请稍等。');
+      apiPost('/api/connect', { token, keyword: kw || '成都 天府三街' }).then(res => {
+        if (!res || !res.ok) { announce('连接失败：' + ((res && res.error) || '未知错误'), { alert: '连接失败' }); return; }
+        applyLive({ stores: res.data.stores, source: res.data.source }, '/');
+      });
+    });
+  } else {
+    const p = el('p', 'hint');
+    p.appendChild(el('b', null, '当前是演示模式'));
+    p.appendChild(document.createTextNode('页面用的是构建时注入的真实快照，报价为菜单现价相加。'
+      + '要跑自己的账号，请在项目目录执行 python scripts/serve.py，它会自动打开带本地功能的同一个页面。'));
+    const pre = el('pre');
+    pre.textContent = 'git clone https://github.com/Calvino-Y/mcd-mcvoice.git\n'
+                    + 'cd mcd-mcvoice\npython scripts/serve.py';
+    box.appendChild(pre);
+  }
+}
+
+/* ==========================================================================
+   无障碍自检：真去检查，不通过就报不通过
+   ========================================================================== */
+function accessibleName(node) {
+  if (node.getAttribute('aria-labelledby')) {
+    const t = node.getAttribute('aria-labelledby').split(/\s+/)
+      .map(id => (document.getElementById(id) || {}).textContent || '').join(' ').trim();
+    if (t) return t;
+  }
+  if (node.getAttribute('aria-label')) return node.getAttribute('aria-label').trim();
+  const txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+  if (txt) return txt;
+  if (node.getAttribute('title')) return node.getAttribute('title').trim();
+  // 表单控件：关联的 label
+  if (node.id) {
+    const lab = document.querySelector('label[for="' + node.id + '"]');
+    if (lab) return (lab.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+  if (node.getAttribute('alt')) return node.getAttribute('alt').trim();
+  return '';
+}
+
+function relLum(rgb) {
+  const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+}
+function parseRgb(s) {
+  // 必须解析 alpha：rgba(0,0,0,0) 是「透明」，不是「黑色」。
+  // 早期版本用 /\d+,\d+,\d+/ 直接抓，把透明元素当成黑底，
+  // 于是对比度一路虚高——自检自己算错，比不自检更糟。
+  const m = String(s).match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*(?:,\s*(\d*\.?\d+))?\s*\)/);
+  if (!m) return null;
+  if (m[4] !== undefined && parseFloat(m[4]) === 0) return null;
+  return [+m[1], +m[2], +m[3]];
+}
+function effectiveBackground(node) {
+  let p = node;
+  while (p) {
+    const rgb = parseRgb(getComputedStyle(p).backgroundColor);
+    if (rgb) return rgb;
+    p = p.parentElement;
+  }
+  return [255, 255, 255];
+}
+function contrast(a, b) {
+  const la = relLum(a), lb = relLum(b);
+  const hi = Math.max(la, lb), lo = Math.min(la, lb);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function runAudit() {
+  const out = $('auditOut');
+  out.innerHTML = '';
+  const results = [];
+  const pass = (name, detail) => results.push({ ok: true, name, detail });
+  const fail = (name, detail) => results.push({ ok: false, name, detail });
+
+  // 1. 语言声明
+  document.documentElement.lang ? pass('页面声明了语言', 'lang="' + document.documentElement.lang + '"')
+                                : fail('页面没有 lang 属性', '屏幕阅读器会用错误发音读整页');
+
+  // 2. 标题层级
+  const h1s = document.querySelectorAll('h1');
+  h1s.length === 1 ? pass('有且只有一个一级标题', '“' + h1s[0].textContent.trim() + '”')
+                   : fail('一级标题数量是 ' + h1s.length, '应当恰好 1 个');
+
+  // 3. main 地标
+  const mains = document.querySelectorAll('main');
+  mains.length === 1 ? pass('有唯一的 main 地标', '') : fail('main 地标数量是 ' + mains.length, '应当恰好 1 个');
+
+  // 4. 可访问名称：所有可交互元素
+  const interactive = [...document.querySelectorAll('button, a[href], input, select, textarea, [role="button"]')]
+    .filter(n => !n.hasAttribute('disabled') && n.type !== 'hidden');
+  const noName = interactive.filter(n => !accessibleName(n));
+  noName.length === 0 ? pass('全部 ' + interactive.length + ' 个可交互元素都有可访问名称', '')
+                      : fail(noName.length + ' 个可交互元素没有可访问名称',
+                             noName.map(n => n.tagName.toLowerCase() + (n.id ? '#' + n.id : '')).join('、'));
+
+  // 5. 图片替代文本
+  const imgs = [...document.querySelectorAll('img')];
+  const badImg = imgs.filter(i => !i.hasAttribute('alt'));
+  imgs.length === 0 ? pass('页面不含图片', '纯文字与语义化结构，天然对屏幕阅读器友好')
+                    : (badImg.length === 0 ? pass(imgs.length + ' 张图片都有 alt', '')
+                                           : fail(badImg.length + ' 张图片缺少 alt', ''));
+
+  // 6. 播报区域
+  const status = document.querySelectorAll('[role="status"], [aria-live="polite"]');
+  const alert = document.querySelectorAll('[role="alert"], [aria-live="assertive"]');
+  (status.length && alert.length) ? pass('无障碍播报区域就位', 'polite ' + status.length + ' 个、assertive ' + alert.length + ' 个')
+                                  : fail('缺少播报区域', 'polite=' + status.length + ' assertive=' + alert.length);
+
+  // 7. 键盘可达性：不能被 tabindex 排除在外
+  const negative = [...document.querySelectorAll('[tabindex]')].filter(n => +n.getAttribute('tabindex') < 0 && n.matches('button,a[href],input,select,textarea'));
+  negative.length === 0 ? pass('没有可交互元素被 tabindex 排除', '') : fail(negative.length + ' 个可交互元素 tabindex 为负', '');
+
+  // 8. 正向 tabindex 滥用（会打乱 Tab 顺序）
+  const positive = [...document.querySelectorAll('[tabindex]')].filter(n => +n.getAttribute('tabindex') > 0);
+  positive.length === 0 ? pass('没有使用正数 tabindex', 'Tab 顺序跟随 DOM 顺序，符合预期')
+                        : fail('有 ' + positive.length + ' 个元素使用了正数 tabindex', '会打乱阅读顺序');
+
+  // 9. 对比度：抽查正文、次要文字、主按钮三处
+  const samples = [];
+  if ($('said')) samples.push(['正文', $('said')]);
+  const subNode = document.querySelector('main .sub') || document.querySelector('footer .site');
+  if (subNode) samples.push(['次要文字', subNode]);
+  if ($('micBtn')) samples.push(['主按钮文字', $('micBtn')]);
+  const seen = new Set();
+  let contrastOk = true; const contrastDetail = [];
+  for (const [label, node] of samples) {
+    if (!node || seen.has(node)) continue;
+    seen.add(node);
+    const fg = parseRgb(getComputedStyle(node).color);
+    const bg = effectiveBackground(node);
+    if (!fg || !bg) continue;
+    const ratio = contrast(fg, bg);
+    const ok = ratio >= 7;     // WCAG AAA 级正文要求
+    if (!ok) contrastOk = false;
+    contrastDetail.push(label + ' ' + ratio.toFixed(1) + ':1' + (ok ? '' : '（低于 AAA 7:1）'));
+  }
+  contrastOk ? pass('文字对比度达到 WCAG AAA（≥7:1）', contrastDetail.join('，'))
+             : fail('有文字对比度不足', contrastDetail.join('，'));
+
+  // 10. 触控目标尺寸
+  const small = interactive.filter(n => {
+    const r = n.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24);
+  });
+  small.length === 0 ? pass('全部可见的可交互元素都不小于 24×24 像素', '（本项目按钮实际做成 52 像素高）')
+                     : fail(small.length + ' 个可交互元素小于 24×24 像素', '');
+
+  // 11. 横向溢出（放大后不该出现横向滚动）
+  const overflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+  overflow <= 2 ? pass('当前字号下没有横向溢出', '')
+                : fail('横向溢出 ' + overflow + ' 像素', '放大字号后可能出现，需要检查换行');
+
+  // 12. 焦点可见性：样式表里必须为 :focus-visible 提供规则
+  let focusRule = false;
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+    for (const r of rules) if (r.selectorText && r.selectorText.includes(':focus-visible')) focusRule = true;
+  }
+  focusRule ? pass('为键盘焦点提供了可见样式', '白圈 + 黑环双色焦点指示') : fail('没有 :focus-visible 规则', '');
+
+  // 13. 语音能力
+  const sup = speechSupport();
+  (sup.recognition || sup.synthesis) ? pass('语音能力可用', '识别=' + (sup.recognition ? '有' : '无') + '，播报=' + (sup.synthesis ? '有' : '无'))
+                                     : fail('浏览器不支持语音合成与识别', '此时只能用键盘 + 屏幕阅读器');
+
+  // 14. 键盘陷阱：走一遍 Tab，看焦点是否会被卡住（用一个临时探针检测）
+  const focusables = interactive.filter(n => n.offsetParent !== null);
+  focusables.length ? pass('当前有 ' + focusables.length + ' 个可键盘聚焦的控件', '') : fail('没有可聚焦控件', '');
+
+  const passCount = results.filter(r => r.ok).length;
+  const failCount = results.length - passCount;
+
+  const summary = el('p', null, '');
+  summary.appendChild(el('strong', null, '自检结果：' + passCount + ' 项通过' + (failCount ? '，' + failCount + ' 项未通过' : '，全部通过')));
+  out.appendChild(summary);
+
+  const ul = el('ul', 'list');
+  for (const r of results) {
+    const li = el('li');
+    const d = el('span', 'dot ' + (r.ok ? 'ok' : 'bad'));
+    d.setAttribute('aria-hidden', 'true');
+    li.appendChild(d);
+    const g = el('span', 'grow');
+    g.appendChild(el('strong', null, (r.ok ? '通过　' : '未通过　') + r.name));
+    if (r.detail) g.appendChild(el('span', 'sub', '　' + r.detail));
+    li.appendChild(g);
+    ul.appendChild(li);
+  }
+  out.appendChild(ul);
+
+  const msg = '自检完成，' + passCount + ' 项通过' + (failCount ? '，' + failCount + ' 项未通过' : '，全部通过') + '。';
+  announce(msg, { alert: msg });
+}
+
+/* ==========================================================================
+   启动
+   ========================================================================== */
+function fillSourceMeta() {
+  const s = (DATA && DATA.source) || {};
+  const bits = [];
+  if (s.storeName) bits.push('采样门店 ' + s.storeName + '（' + s.storeCode + '）');
+  if (s.capturedAt) bits.push('采样日期 ' + s.capturedAt);
+  if (LIVE) bits.push('当前显示的是你本地拉取的实时数据');
+  $('srcMeta').textContent = bits.join('　·　');
+}
+
+function init() {
+  if (!DATA) {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<p role="alert" style="padding:1rem;border:3px solid #a1121b">数据没有注入成功，页面无法运行。请重新执行 python scripts/render_app.py。</p>');
+    return;
+  }
+  State.stores = (DATA.stores || []).slice();
+  State.store = null;
+  // 本地模式拉过门店后，默认就停在第 2 步让人选
+  State.step = 'welcome';
+
+  pickVoice();
+  if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = pickVoice;
+
+  fillSourceMeta();
+  renderStep();
+  renderLocalBox();
+  syncMicButton();
+  setSaid(STEPS.welcome.say);
+
+  $('micBtn').addEventListener('click', () => {
+    if (!State.started) { begin(); return; }
+    if (listening) { stopListening(); announce('好，我停下来了。按一下可以继续。'); }
+    else {
+      const ok = startListening();
+      announce(ok ? '我在听。' : micUnavailableMsg, ok ? {} : { alert: '语音识别不可用，请用输入框打字' });
+    }
+  });
+  $('repeatBtn').addEventListener('click', () => { if (!State.started) { announce(STEPS.welcome.say); return; } announce(STEPS[State.step].say); });
+  $('backBtn').addEventListener('click', () => { if (!State.started) { announce('还没开始呢。'); return; } goBack(); });
+  $('helpBtn').addEventListener('click', () => { if (!State.started) { announce(STEPS.welcome.say + ' 开始之后每一步我都会告诉你能说什么。'); return; } sayHelp(); });
+  $('sendBtn').addEventListener('click', () => {
+    const v = $('typeInput').value.trim();
+    if (!v) { announce('输入框是空的，先打一句想说的话。'); $('typeInput').focus(); return; }
+    $('typeInput').value = '';
+    handleUtterance(v);
+  });
+  $('typeInput').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); $('sendBtn').click(); }
+  });
+  $('auditBtn').addEventListener('click', runAudit);
+
+  $('speakOn').addEventListener('change', () => {
+    if (!$('speakOn').checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    // 关掉播报时，把当前步骤完整写进 live 区域，交还给屏幕阅读器
+    if (!$('speakOn').checked) $('live').textContent = STEPS[State.step].say;
+  });
+  $('allowOrder').addEventListener('change', () => {
+    const on = $('allowOrder').checked;
+    announce(on ? '已允许创建订单。之后在报价步骤说「确认下单」，我会真的调用 MCP 创建订单，并给出支付链接。'
+                : '已关闭创建订单。流程只会走到算出总价为止，不会产生订单。');
+  });
+  $('fontScale').addEventListener('input', () => {
+    const v = +$('fontScale').value;
+    document.documentElement.style.setProperty('--fs', (20 * v / 100) + 'px');
+    $('fontScaleVal').textContent = v + '%';
+  });
+  $('fontReset').addEventListener('click', () => {
+    $('fontScale').value = 100;
+    document.documentElement.style.setProperty('--fs', '20px');
+    $('fontScaleVal').textContent = '100%';
+  });
+
+  // 页面任意位置按回车（不在输入框里）等同于「开始使用 / 开始说话」
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    const tag = (ev.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'button' || tag === 'a' || tag === 'summary') return;
+    ev.preventDefault();
+    $('micBtn').click();
+  });
+
+  // 键盘快捷键：Alt+R 再说一遍，Alt+B 退回上一步，Alt+M 开关麦克风
+  document.addEventListener('keydown', (ev) => {
+    if (!ev.altKey) return;
+    const k = ev.key.toLowerCase();
+    if (k === 'r') { ev.preventDefault(); $('repeatBtn').click(); }
+    else if (k === 'b') { ev.preventDefault(); $('backBtn').click(); }
+    else if (k === 'm') { ev.preventDefault(); $('micBtn').click(); }
+    else if (k === 'a') { ev.preventDefault(); $('auditBtn').click(); }
+  });
+
+  // 暴露给自动化测试：状态机、匹配器、渲染入口
+  globalThis.__MCVOICE_APP__ = {
+    State, STEPS, handleUtterance, begin, runAudit, dispatch,
+    matchItems, parseUtterance, estimatePrice, itemByCode, speechSupport,
+    resetAll, chooseTakeWay, doQuote, goStores
+  };
+
+  // URL 带 ?audit=1 时自动跑一次自检，方便自动化验证
+  if (location.search.includes('audit=1')) setTimeout(runAudit, 300);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>

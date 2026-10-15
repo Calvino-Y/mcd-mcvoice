@@ -1,0 +1,58 @@
+{
+  "tool": "query-nearby-stores",
+  "arguments": { "beType": 1, "searchType": 2, "city": "成都", "keyword": "天府三街" },
+  "capturedAt": "2026-10-15T16:53:20",
+  "note": "query-nearby-stores 的真实返回快照（beType=1 到店自取）。distance 单位米，为搜索位置到门店的直线距离。",
+  "stores": [
+    {
+      "storeCode": "3450034001",
+      "storeName": "成都天府三街地铁站快捷小站",
+      "address": "成都天府三街地铁站内",
+      "distance": 80,
+      "businessStatus": false,
+      "businessStartTime": "08:00",
+      "businessEndTime": "22:00",
+      "reservation": true
+    },
+    {
+      "storeCode": "3450342",
+      "storeName": "麦当劳成都高新大源东天府三街新希望国际B座餐厅",
+      "address": "高新区天府三街69号新希望国际B座",
+      "distance": 260,
+      "businessStatus": true,
+      "businessStartTime": "07:30",
+      "businessEndTime": "23:00",
+      "reservation": true
+    },
+    {
+      "storeCode": "3450034",
+      "storeName": "麦当劳成都软件园得来速餐厅",
+      "address": "软件园B区天华二路218号",
+      "distance": 389,
+      "businessStatus": true,
+      "businessStartTime": "00:00",
+      "businessEndTime": "23:59",
+      "reservation": true
+    },
+    {
+      "storeCode": "3450121",
+      "storeName": "麦当劳成都天府三街餐厅",
+      "address": "高新区天府三街218号峰汇中心二号楼一层",
+      "distance": 671,
+      "businessStatus": true,
+      "businessStartTime": "07:30",
+      "businessEndTime": "01:00",
+      "reservation": true
+    },
+    {
+      "storeCode": "3450214",
+      "storeName": "麦当劳成都天府大道中段餐厅",
+      "address": "高新区天府大道中段396号地下一层5号商铺",
+      "distance": 971,
+      "businessStatus": true,
+      "businessStartTime": "07:30",
+      "businessEndTime": "23:00",
+      "reservation": true
+    }
+  ]
+}
