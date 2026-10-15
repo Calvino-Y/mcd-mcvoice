@@ -94,8 +94,34 @@ window.addEventListener("load", function(){
       A.handleUtterance("来一份巨无霸");
       log.push(["加购巨无霸", A.State.cart.length, A.State.cart[0] && A.State.cart[0].code, A.State.cart[0] && A.State.cart[0].qty]);
 
+      // 同音容错：识别把「可乐」听成「渴乐」，也必须能加进来
+      A.handleUtterance("渴乐");
+      log.push(["同音容错渴乐", A.State.cart.length, A.State.cart[1] && A.State.cart[1].code]);
+
+      // 听到原文回显：用户必须能看见「系统到底听到了什么」
+      o.heardText = (document.getElementById("heardVal") || {}).textContent || "";
+      o.heardHidden = !!(document.getElementById("heard") || {}).hidden;
+
+      // 多候选择优：模拟识别器给三个候选，第一名是错的
+      A.State.cart = []; A.State.step = "browse";
+      A.handleAlternatives([
+        { text: "阿巴阿巴", conf: 0.91 },
+        { text: "书条", conf: 0.42 },
+        { text: "巨无把", conf: 0.30 }
+      ]);
+      log.push(["多候选择优", A.State.cart.length, A.State.cart[0] && A.State.cart[0].code]);
+      o.heardAltText = (document.getElementById("heardVal") || {}).textContent || "";
+      A.State.cart = [];
+
+      // 进度条随步骤走
+      o.TOTAL = A.TOTAL_STEPS;
+      o.progressCells = document.querySelectorAll("#progress li").length;
+      o.progressNow = document.querySelectorAll("#progress li.now").length;
+      o.progressText = (document.getElementById("progressText") || {}).textContent || "";
+
       A.handleUtterance("再来两份薯条");
-      log.push(["加购薯条x2", A.State.cart.length, A.State.cart[1] && A.State.cart[1].qty]);
+      const last = A.State.cart[A.State.cart.length - 1];
+      log.push(["加购薯条x2", A.State.cart.length, last && last.qty]);
 
       A.handleUtterance("算价");
       await wait(400);
@@ -298,6 +324,24 @@ def main() -> int:
     check("「来一份巨无霸」加购 1 件巨无霸（1100）",
           (steps.get("加购巨无霸") or [])[1] == 1 and (steps.get("加购巨无霸") or [None, None, None])[2] == "1100",
           str(steps.get("加购巨无霸")))
+    check("同音容错：「渴乐」也能加进购物车（识别把「可」听成「渴」）",
+          (steps.get("同音容错渴乐") or [None, None])[1] == 2
+          and (steps.get("同音容错渴乐") or [None, None, None])[2] == "9900008751",
+          str(steps.get("同音容错渴乐")))
+
+    print("\n  听不清时用户能不能自己判断（识别不准的止血措施）")
+    check("页面上如实回显「听到原文」", res.get("heardHidden") is False and bool(res.get("heardText")),
+          f"hidden={res.get('heardHidden')} text={res.get('heardText')!r}")
+    check("采纳非第一名候选时会写明「按哪一句理解」",
+          "按「" in (res.get("heardAltText") or ""), repr(res.get("heardAltText")))
+    check("多候选择优：三个候选里挑出了能被理解的那句（书条→薯条）",
+          (steps.get("多候选择优") or [None, None])[1] == 1
+          and (steps.get("多候选择优") or [None, None, None])[2] == "4810",
+          str(steps.get("多候选择优")))
+    check("进度条按总步数铺满且只有一格是「当前」",
+          res.get("progressCells") == res.get("TOTAL") and res.get("progressNow") == 1,
+          f"cells={res.get('progressCells')} now={res.get('progressNow')} text={res.get('progressText')!r}")
+
     check("「再来两份薯条」的数量解析正确（2 份）",
           (steps.get("加购薯条x2") or [None, None])[2] == 2, str(steps.get("加购薯条x2")))
     check("「算价」进入报价步骤且给出金额",

@@ -29,7 +29,7 @@ TOP = ROOT / "docs" / "preview-top.png"
 
 WIDTH = 1440
 TOP_HEIGHT = 2050           # 头图高度，和上一个项目保持一致
-BG = (255, 255, 255)        # 页面 --bg
+BG = (255, 253, 247)        # 页面 --bg（暖白纸面）
 BROWSERS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
@@ -70,6 +70,7 @@ window.addEventListener("load", function(){
     }
     var d = document.createElement("div");
     d.id = "__metrics";
+    d.style.display = "none";   // 只用来回传高度，不能漏到截图里
     d.textContent = "METRICS::" + Math.ceil(document.documentElement.scrollHeight);
     document.body.appendChild(d);
   }, 700);

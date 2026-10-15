@@ -7,120 +7,189 @@
 <title>麦声 McVoice · 用说的点麦当劳</title>
 <style>
 /* ==========================================================================
-   设计基调：简洁经典，一切为「听得懂、按得到」服务。
-   - 根字号 20px（浏览器默认 16px），可再放大到 32px
-   - 正文对比度 17:1，次要文字 8:1，按钮 18:1，全部超过 WCAG AAA(7:1)
+   设计基调：简洁经典 —— 暖白纸面、品牌黄做主行动、深红做状态，
+   留白撑起层级，不用渐变、不靠颜色单独传达信息。
+
+   无障碍红线（改样式时不许退让，tests/browser_check.py 每次都会验）：
+   - 根字号 20px（浏览器默认 16px），页内可再放大到 160%
+   - 正文对比度 ≥ 7:1（WCAG AAA）；次要文字 7.7:1；主按钮深字压品牌黄 12:1
    - 双色焦点环：白圈 + 黑环，浅色和深色控件上都看得见
-   - 不用渐变、不用装饰阴影、不靠颜色单独传达信息
+   - 可交互元素 ≥ 24×24（本项目按钮实际 52px 起，麦克风 104px）
+   - 动效全部在 prefers-reduced-motion 下关闭
+   配色取值（对比度均按 WCAG 相对亮度公式实算）：
+     暖白 #fffdf7 · 暖黑 #1a1410（17:1）· 次要 #5a5048（7.7:1）
+     品牌黄 #ffc72c + 黑字（12:1）· 深红 #a61914 + 白字（7.6:1）
    ========================================================================== */
 :root{
-  --bg:#ffffff; --panel:#f4f4f4; --panel-2:#ebebeb;
-  --ink:#111111; --muted:#4d4d4d; --line:#b0b0b0; --line-strong:#6b6b6b;
-  --accent:#0b3d91; --accent-ink:#ffffff;
-  --live:#a1121b;
-  --ok:#0b5f2a; --warn:#8a4b00; --bad:#a1121b;
-  --radius:10px;
+  --bg:#fffdf7; --panel:#fff8e8; --panel-2:#fdf1d8;
+  --card:#ffffff;
+  --ink:#1a1410; --muted:#5a5048; --line:#e2d8c6; --line-strong:#b8a888;
+  --brand:#ffc72c; --brand-ink:#1a1410;
+  --accent:#a61914; --accent-ink:#ffffff;
+  --live:#a61914;
+  --ok:#0a5c28; --warn:#7a4100; --bad:#a61914;
+  --radius:14px; --radius-sm:10px;
+  --shadow:0 1px 2px rgba(26,20,16,.06), 0 6px 18px -8px rgba(26,20,16,.14);
+  --ring:0 0 0 3px #fffdf7, 0 0 0 6px #1a1410;
   --fs:20px;
 }
 *{box-sizing:border-box}
-html{font-size:var(--fs)}
+html{font-size:var(--fs); scroll-behavior:smooth}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",
               "Microsoft YaHei","Source Han Sans SC",sans-serif;
-  font-size:1rem; line-height:1.75;
+  font-size:1rem; line-height:1.7;
   -webkit-text-size-adjust:100%;
+  background-image:radial-gradient(circle at 12% -6%, #fff3cf 0%, rgba(255,243,207,0) 42%);
+  background-repeat:no-repeat;
 }
-.wrap{max-width:44rem; margin:0 auto; padding:1.25rem 1.25rem 4rem}
+.wrap{max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem}
 
 /* 焦点：任何可聚焦元素都必须有清晰可见的焦点指示（WCAG 2.4.7 / 2.4.11） */
 :focus{outline:none}
-:focus-visible{outline:3px solid #ffffff; box-shadow:0 0 0 6px #111111; border-radius:6px}
+:focus-visible{outline:3px solid #ffffff; box-shadow:0 0 0 6px #1a1410; border-radius:8px}
 
 /* 跳到主内容：键盘用户第一个 Tab 就能用 */
 .skip{position:absolute; left:-9999px; top:0; z-index:99;
-  background:var(--ink); color:#fff; padding:.75rem 1.25rem; border-radius:0 0 var(--radius) 0;
+  background:#1a1410; color:#fff; padding:.75rem 1.25rem; border-radius:0 0 var(--radius) 0;
   font-weight:700; text-decoration:none}
 .skip:focus{left:0}
 
-header.site{border-bottom:3px solid var(--ink); padding-bottom:1rem; margin-bottom:1.5rem}
-.brand{display:flex; align-items:baseline; gap:.6rem; margin:0 0 .5rem}
-.brand b{font-size:1.25rem; letter-spacing:.02em}
-.brand span{color:var(--muted); font-size:.85rem; letter-spacing:.08em}
-h1{font-size:1.75rem; line-height:1.35; margin:.25rem 0 .5rem}
-.lede{margin:0; color:var(--muted); font-size:.95rem}
+/* ---- 页头 ---- */
+header.site{padding:1.25rem 0 1.5rem; margin-bottom:.5rem;
+  border-bottom:1px solid var(--line)}
+.brand{display:flex; align-items:center; gap:.6rem; margin:0 0 .75rem}
+.brand .mark{width:2.4rem; height:2.4rem; border-radius:12px; background:var(--brand);
+  display:inline-flex; align-items:center; justify-content:center; flex:none;
+  border:2px solid var(--ink); font-weight:800; font-size:1.1rem; color:var(--brand-ink)}
+.brand b{font-size:1.35rem; letter-spacing:.01em}
+.brand span{color:var(--muted); font-size:.8rem; letter-spacing:.14em; font-weight:600}
+h1{font-size:2.1rem; line-height:1.25; margin:0 0 .6rem; letter-spacing:-.01em}
+.lede{margin:0; color:var(--muted); font-size:.98rem; max-width:34rem}
 
-section{margin:2rem 0; padding-top:1.25rem; border-top:1px solid var(--line)}
-section:first-of-type{border-top:none; padding-top:0}
-h2{font-size:1.15rem; margin:0 0 .75rem; letter-spacing:.02em}
-h3{font-size:1rem; margin:1.25rem 0 .5rem; color:var(--muted)}
+section{margin:2.5rem 0 0}
+h2{font-size:1.3rem; margin:0 0 1rem; letter-spacing:-.005em;
+  display:flex; align-items:center; gap:.6rem}
+h2::before{content:""; width:.3rem; height:1.15em; background:var(--brand);
+  border-radius:999px; flex:none; border:1px solid #e0ac13}
+h3{font-size:1.02rem; margin:1.5rem 0 .6rem; color:var(--ink); font-weight:700}
+
+/* ---- 进度条：8 步走到哪了一目了然（纯视觉，步骤信息由主控区念出来） ---- */
+.progress-wrap{display:flex; align-items:center; gap:.75rem; margin-bottom:1rem}
+.progress{list-style:none; display:flex; gap:.3rem; margin:0; padding:0; flex:1}
+.progress li{flex:1; height:.6rem; border-radius:999px; background:var(--panel-2);
+  border:1px solid var(--line)}
+.progress li.done{background:var(--line-strong); border-color:var(--line-strong)}
+.progress li.now{background:var(--brand); border-color:#d9a512; height:.8rem}
+.progress-text{font-weight:700; font-size:.85rem; color:var(--muted); white-space:nowrap}
 
 /* ---- 主控区：一屏之内看清「现在在哪、能说什么、按哪里」 ---- */
-.stage{background:var(--panel); border:2px solid var(--line-strong); border-radius:var(--radius);
-  padding:1.25rem; margin-bottom:1.25rem}
-.stage-top{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.5rem}
+.stage{background:var(--card); border:2px solid var(--ink); border-radius:var(--radius);
+  padding:1.35rem 1.35rem 1.5rem; margin-bottom:1.25rem; box-shadow:var(--shadow)}
+.stage-top{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.35rem}
 .step-no{background:var(--ink); color:#fff; font-weight:700; font-size:.8rem;
-  padding:.2rem .6rem; border-radius:999px; letter-spacing:.06em}
-.step-name{font-size:1.35rem; font-weight:700; margin:0}
-.said{margin:.5rem 0 0; font-size:1.05rem; min-height:3.5rem}
-.said strong{background:#fff3b0; padding:0 .25rem; border-radius:3px}
+  padding:.25rem .7rem; border-radius:999px; letter-spacing:.06em}
+.step-name{font-size:1.5rem; font-weight:800; margin:0; letter-spacing:-.01em}
+.said{margin:.5rem 0 0; font-size:1.08rem; min-height:3.5rem}
+.said strong{background:#ffe680; padding:0 .25rem; border-radius:4px}
+
+/* 听到原文回显：让用户能立刻分辨「没听见」和「听错了」 */
+.heard{margin:1rem 0 0; padding:.7rem 1rem; border-radius:var(--radius-sm);
+  background:var(--panel); border:1px dashed var(--line-strong); font-size:.95rem}
+.heard .lbl{font-weight:700; color:var(--muted); font-size:.85rem; letter-spacing:.04em}
+.heard .val{font-weight:700}
+.heard.live .val{color:var(--muted); font-weight:600}
+.heard:empty{display:none}
+
 
 .btn{
   font:inherit; font-weight:700; cursor:pointer;
   min-height:3.25rem; padding:.7rem 1.25rem;
-  border-radius:var(--radius); border:2px solid var(--ink);
-  background:#fff; color:var(--ink);
+  border-radius:var(--radius-sm); border:2px solid var(--ink);
+  background:var(--card); color:var(--ink);
   display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  transition:background .12s ease, transform .12s ease;
 }
 .btn:hover{background:var(--panel-2)}
-.btn-primary{background:#141414; color:#fff; border-color:#141414}
-.btn-primary:hover{background:#333}
-.btn-accent{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
-.btn-accent:hover{background:#0a3279}
-.btn-live{background:var(--live); color:#fff; border-color:var(--live)}
-.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--ink); color:#fff; border-color:var(--ink)}
+.btn-primary:hover{background:#3a2f26}
+.btn-accent{background:var(--accent); color:var(--accent-ink); border-color:#6f0f0c}
+.btn-accent:hover{background:#8e1511}
+.btn-live{background:var(--live); color:#fff; border-color:#6f0f0c}
+.btn:disabled{opacity:.5; cursor:not-allowed}
 .btn-row{display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1rem}
 .btn-row .btn{flex:1 1 11rem}
 
-/* 麦克风大按钮：这个应用的主入口，单独做得又大又显眼 */
-.mic{width:100%; min-height:4.5rem; font-size:1.15rem}
-.mic[aria-pressed="true"]{background:var(--live); border-color:var(--live); color:#fff}
+/* ---- 麦克风：这个应用的主入口，做成又好按又明确的圆形按钮 ----
 
-.hint{margin:1rem 0 0; padding:.85rem 1rem; background:#fff; border:1px solid var(--line);
-  border-left:5px solid var(--accent); border-radius:0 var(--radius) var(--radius) 0; font-size:.95rem}
+   注意这条必须写在 .btn **之后**：两条选择器特异性相同（0,1,0），
+   谁在后面谁赢。第一版把它写在 .btn 前面，结果 border-radius:50%
+   被 .btn 的圆角盖掉，圆形按钮渲染成了圆角方块——截图一看才发现。
+   现在统一用 .btn.mic（0,2,0）把特异性也抬上去，位置和权重双保险。 */
+.mic-row{display:flex; justify-content:center; margin:1.6rem 0 .6rem}
+.btn.mic{width:9rem; height:9rem; min-height:0; padding:.6rem; border-radius:50%;
+  font-size:1.05rem; line-height:1.3; flex-direction:column; gap:.35rem;
+  background:var(--brand); color:var(--brand-ink); border:3px solid var(--ink);
+  box-shadow:var(--shadow)}
+/* 图标用内联 SVG 画，不用 emoji：emoji 在不同系统渲染差异大，
+   而且跟着字色走不了。这里让图标永远是墨色，按下时换白色。 */
+.btn.mic::before{content:""; width:2.7rem; height:2.7rem; flex:none;
+  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a1410' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='8' y1='23' x2='16' y2='23'/%3E%3C/svg%3E")}
+.btn.mic:hover{background:#ffd75e}
+.btn.mic[aria-pressed="true"]{background:var(--accent); color:#fff; border-color:#6f0f0c;
+  box-shadow:0 0 0 8px rgba(166,25,20,.18), var(--shadow)}
+.btn.mic[aria-pressed="true"]::before{
+  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='8' y1='23' x2='16' y2='23'/%3E%3C/svg%3E")}
+/* 正在听的时候给一圈缓慢外扩的呼吸环：不看屏幕也能从余光里知道它还开着。
+   动画是纯装饰性的，prefers-reduced-motion 下直接关掉。 */
+@keyframes micPulse{from{box-shadow:0 0 0 0 rgba(166,25,20,.30), var(--shadow)}
+                    to{box-shadow:0 0 0 16px rgba(166,25,20,0), var(--shadow)}}
+.btn.mic[aria-pressed="true"]{animation:micPulse 1.8s ease-out infinite}
+.mic-note{text-align:center; color:var(--muted); font-size:.9rem; margin:.25rem 0 0}
+
+.hint{margin:1.25rem 0 0; padding:.9rem 1.1rem; background:var(--panel);
+  border:1px solid var(--line); border-left:5px solid var(--brand);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:.95rem}
 .hint b{display:block; margin-bottom:.25rem}
-.chips{list-style:none; display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; padding:0}
-.chips li{background:#fff; border:1px solid var(--line-strong); border-radius:999px;
-  padding:.3rem .85rem; font-size:.9rem}
+.chips{list-style:none; display:flex; flex-wrap:wrap; gap:.5rem; margin:.6rem 0 0; padding:0}
+.chips li{background:var(--card); border:1px solid var(--line-strong); border-radius:999px;
+  padding:.35rem .9rem; font-size:.9rem}
 
-.grid{display:grid; gap:.75rem; grid-template-columns:1fr}
-@media (min-width:34rem){ .grid.two{grid-template-columns:1fr 1fr} }
+.grid{display:grid; gap:.9rem; grid-template-columns:1fr}
+@media (min-width:36rem){ .grid.two{grid-template-columns:1fr 1fr} }
 
-.card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:1rem}
-.card h3{margin-top:0; color:var(--ink); font-size:1rem}
-.card .num{font-size:1.5rem; font-weight:700; display:block; margin:.15rem 0}
-.card .sub{color:var(--muted); font-size:.85rem}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:1.15rem; box-shadow:var(--shadow)}
+.card h3{margin-top:0; color:var(--ink); font-size:1rem; color:var(--muted);
+  letter-spacing:.04em; font-size:.85rem; text-transform:uppercase}
+.card .num{font-size:1.9rem; font-weight:800; display:block; margin:.2rem 0; letter-spacing:-.02em}
+.card .sub{color:var(--muted); font-size:.88rem}
 
 ol.list, ul.list{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
 ol.list li, ul.list li{display:flex; gap:.75rem; align-items:baseline;
-  padding:.7rem .25rem; border-bottom:1px solid var(--line)}
+  padding:.75rem .25rem; border-bottom:1px solid var(--line)}
 ol.list li .idx{min-width:2rem; font-weight:700; color:var(--muted)}
 .grow{flex:1}
-.price{font-weight:700; white-space:nowrap}
-.tag{display:inline-block; font-size:.78rem; padding:.1rem .5rem; border-radius:999px;
+.price{font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums}
+.tag{display:inline-block; font-size:.78rem; padding:.12rem .55rem; border-radius:999px;
   border:1px solid var(--line-strong); color:var(--muted); margin-left:.4rem; white-space:nowrap}
-.tag-on{background:#e8f2e8; border-color:var(--ok); color:var(--ok)}
+.tag-on{background:#e8f4ea; border-color:var(--ok); color:var(--ok)}
 
-.empty{color:var(--muted); padding:.75rem .25rem}
+.empty{color:var(--muted); padding:.85rem .25rem}
 
 /* 打字兜底：语音不可用或环境嘈杂时必须还能用 */
 .field{display:block; margin-top:1rem}
 .field span{display:block; font-weight:700; margin-bottom:.35rem}
 input[type=text], input[type=password], input[type=search]{
-  font:inherit; width:100%; padding:.7rem .85rem; border:2px solid var(--line-strong);
-  border-radius:var(--radius); background:#fff; color:var(--ink); min-height:3.25rem}
-label.check{display:flex; gap:.7rem; align-items:flex-start; padding:.6rem 0; cursor:pointer}
+  font:inherit; width:100%; padding:.7rem .9rem; border:2px solid var(--line-strong);
+  border-radius:var(--radius-sm); background:var(--card); color:var(--ink); min-height:3.25rem}
+label.check{display:flex; gap:.7rem; align-items:flex-start; padding:.7rem 0; cursor:pointer}
 label.check input{width:1.6rem; height:1.6rem; margin:.2rem 0 0; flex:none}
+/* 开关和滑杆默认用浏览器自己的蓝色（Chrome 是 #0075ff），和整页的暖色调完全打架。
+   accent-color 一行就把它们统一到品牌的行动色上；深红够深，白字勾在里面的对比也够。 */
+label.check input, input[type=range]{accent-color:var(--accent)}
 .range-row{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap}
 input[type=range]{flex:1 1 12rem; min-height:3rem}
 
@@ -130,32 +199,35 @@ input[type=range]{flex:1 1 12rem; min-height:3rem}
 
 table{width:100%; border-collapse:collapse; font-size:.92rem}
 caption{text-align:left; color:var(--muted); padding-bottom:.5rem}
-th,td{text-align:left; padding:.55rem .5rem; border-bottom:1px solid var(--line)}
+th,td{text-align:left; padding:.6rem .5rem; border-bottom:1px solid var(--line)}
 th{font-size:.85rem; color:var(--muted); font-weight:700}
 
-details{border:1px solid var(--line); border-radius:var(--radius); padding:.75rem 1rem; background:#fff}
+details{border:1px solid var(--line); border-radius:var(--radius); padding:.85rem 1.1rem;
+  background:var(--card); box-shadow:var(--shadow)}
 details+details{margin-top:.75rem}
 summary{font-weight:700; cursor:pointer; padding:.35rem 0}
-summary:focus-visible{outline:3px solid #fff; box-shadow:0 0 0 6px #111}
+summary:focus-visible{outline:3px solid #fff; box-shadow:0 0 0 6px #1a1410}
 
 code, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em}
-pre{margin:.75rem 0 0; padding:.85rem; background:var(--panel-2); border-radius:var(--radius);
+pre{margin:.75rem 0 0; padding:.9rem; background:var(--panel-2); border-radius:var(--radius-sm);
   overflow-x:auto; font-size:.85rem; line-height:1.6}
 
-footer.site{margin-top:3rem; padding-top:1.25rem; border-top:3px solid var(--ink);
-  font-size:.85rem; color:var(--muted)}
-footer.site p{margin:.4rem 0}
+footer.site{margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line);
+  font-size:.88rem; color:var(--muted)}
+footer.site p{margin:.45rem 0}
 
 .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
   clip:rect(0 0 0 0); white-space:nowrap; border:0}
 
-/* 高对比偏好：系统的「增强对比」开关打开时，把次要色也压到纯黑 */
+/* 高对比偏好：系统的「增强对比」开关打开时，把次要色也压到纯黑、去掉柔和阴影 */
 @media (prefers-contrast:more){
-  :root{--muted:#111111; --line:#111111; --line-strong:#111111; --panel:#ffffff; --panel-2:#ffffff}
-  .card,.stage,.hint,details{border-width:3px}
+  :root{--muted:#1a1410; --line:#1a1410; --line-strong:#1a1410;
+        --panel:#ffffff; --panel-2:#ffffff; --card:#ffffff}
+  .card,.stage,.hint,details{border-width:3px; box-shadow:none}
+  .brand .mark{border-width:3px}
 }
 /* 减少动画偏好：本页本来就没有动画，这里显式声明一下，避免以后加东西忘了 */
-@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} html{scroll-behavior:auto} }
 @media print{ .btn,.mic{display:none} }
 </style>
 </head>
@@ -164,7 +236,10 @@ footer.site p{margin:.4rem 0}
 
 <div class="wrap">
 <header class="site">
-  <p class="brand"><b>麦声 · McVoice</b><span>VOICE ORDERING</span></p>
+  <p class="brand">
+    <span class="mark" aria-hidden="true">麦</span>
+    <b>麦声 · McVoice</b><span>VOICE ORDERING</span>
+  </p>
   <h1>用说的，点麦当劳</h1>
   <p class="lede">这份页面为视障用户设计：全程可以不看屏幕，用语音完成「选门店 → 点餐 → 确认 → 算价 → 下单」。
   也可以完全用键盘操作。所有门店、菜单与价格都来自麦当劳 MCP 的真实返回。</p>
@@ -176,27 +251,34 @@ footer.site p{margin:.4rem 0}
   <section aria-labelledby="h-stage" id="sec-stage">
     <h2 id="h-stage" class="sr-only">当前步骤与语音控制</h2>
 
+    <!-- 进度条纯装饰：准确的步骤信息由下面的 stepNo/stepName 与播报负责，
+         所以这里 aria-hidden，避免屏幕阅读器把同一件事读两遍。 -->
+    <div class="progress-wrap" aria-hidden="true">
+      <ol class="progress" id="progress"></ol>
+      <span class="progress-text mono" id="progressText">0 / 8</span>
+    </div>
+
     <div class="stage">
       <div class="stage-top">
         <span class="step-no" id="stepNo">STEP 1</span>
         <p class="step-name" id="stepName">准备开始</p>
       </div>
       <p class="said" id="said">按下面的按钮或按回车键开始。开始之后，我会把每一步都念出来。</p>
+
+      <!-- 听到原文：把「语音识别听到了什么」如实回显。
+           这一条是「识别不准」时用户唯一的抓手——分不清「没听见」和「听错了」，
+           就无从决定是重说一遍还是换个说法。 -->
+      <p class="heard" id="heard" hidden><span class="lbl" id="heardLbl">听到原文</span>　<span class="val" id="heardVal"></span></p>
     </div>
 
     <!-- 状态播报区：屏幕阅读器靠它跟上流程；aria-atomic 保证整句重读而不是只读变化部分 -->
     <p id="live" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></p>
     <p id="alert" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></p>
 
-    <div class="btn-row">
-      <button type="button" class="btn btn-primary mic" id="micBtn" aria-pressed="false">开始使用</button>
+    <div class="mic-row">
+      <button type="button" class="btn mic" id="micBtn" aria-pressed="false">开始使用</button>
     </div>
-
-    <div class="hint">
-      <b>这个按钮是总开关</b>
-      第一次按它会开启语音播报并进入点餐流程；之后按它可以随时「开始说话 / 停止说话」。
-      说话时按钮会变成红色。听不清就按「再说一遍」，说错了就按「退回上一步」。
-    </div>
+    <p class="mic-note" id="micNote">按一下开始，之后随时可以按它开关说话</p>
 
     <div class="btn-row">
       <button type="button" class="btn" id="repeatBtn">再说一遍</button>
@@ -308,6 +390,10 @@ let DATA = (LIVE && LIVE.menu) || /*__DATA__*/ null;
 const PRICE_SNAPSHOT = (LIVE && LIVE.price) || /*__PRICE__*/ null;
 const BUILD_INFO = /*__BUILD__*/ null;
 
+/* 拼音表：数据里是「音节 → 汉字串」的紧凑存法，启动时展开一次成「字 → 音节」。
+   展开后所有匹配都只是查表，不再有任何计算开销。 */
+let PY = {};
+
 /* 演示模式下的算价：按菜单现价相加，不做任何优惠推算。
    返回结构与真实 calculate-price 对齐，区别用 `estimated` 字段标出来，
    页面与测试都以此判断「这是真报价还是估算」，避免两端口径混用。 */
@@ -402,6 +488,138 @@ function scoreName(query, candidate) {
   return 0;
 }
 
+/* ---- 同音容错：拼音层 ----
+
+   语音识别错的字，绝大多数是**同音字**（「巨无霸」→「巨无八」、「薯条」→「数条」）。
+   手写的误听纠正表只能覆盖我们想得到的几十种；拼音层能覆盖**所有**同音错法。
+   更关键的是，它还顺带解决了「平翘舌不分」这类识别器本身的老毛病——
+   见下面的模糊音处理。
+
+   拼音表由 scripts/build_pinyin.py 在构建时用 pypinyin 算好，随仓库提交，
+   所以页面运行时依旧零依赖，只是查表。
+   表要覆盖 GB2312 一级汉字（3766 字 / 16 KB，按音节分组压过体积）——
+   只收菜单用字是个坑：错字天生就是菜单外的字（「可乐」听成「渴乐」，
+   「渴」不在菜单里），表比菜单窄就等于整层失效。
+
+   两条设计约束：
+   1) 拼音层只用来**补救**，字面对得上永远优先 —— 所以分数封顶 78，
+      低于任何字面命中（最低一档的字面命中是 70）。
+   2) 少于两个字的查询不启用拼音层：单个音太宽泛，会把「牛」匹配到「牛奶」「牛堡」。 */
+
+/* 模糊音：识别器常把平翘舌、前后鼻音弄混（尤其南方口音），
+   把 zh/ch/sh 归到 z/c/s、ng 归到 n 之后再比一次，能救回一大类错字。 */
+function fuzzyPinyinSeq(seq) {
+  return seq.map(p => String(p)
+    .replace(/^zh/, 'z').replace(/^ch/, 'c').replace(/^sh/, 's')
+    .replace(/ang$/, 'an').replace(/eng$/, 'en').replace(/ing$/, 'in'));
+}
+
+/* 拼音表在数据里是「音节 → 汉字串」存着的（「ke」→「可渴克刻客课…」），
+   这样 3700 多字的表只有 16 KB。这里一次性展开成「字 → 音节」供查表。
+   为什么要覆盖到 GB2312 一级汉字这个量级：
+   第一版只收了菜单里出现过的字，结果最该救的情况反而救不了——
+   「可乐」被听成「渴乐」时「渴」根本不在菜单里，查不到读音，整层失效。
+   错字天生是菜单外的字，所以表必须比菜单宽得多。 */
+function expandPinyin(grouped) {
+  const flat = {};
+  if (!grouped || typeof grouped !== 'object') return flat;
+  for (const syllable of Object.keys(grouped)) {
+    for (const ch of String(grouped[syllable] || '')) flat[ch] = syllable;
+  }
+  return flat;
+}
+
+function toPinyinSeq(s, table) {
+  const out = [];
+  for (const ch of String(s || '')) {
+    if (table && table[ch]) out.push(table[ch]);
+    else if (/[a-z0-9]/.test(ch)) out.push(ch);
+    else out.push(ch);          // 表外的字原样保留：两侧同字时仍然能对上
+  }
+  return out;
+}
+
+/* 最长公共子序列长度（有序、允许跳字） */
+function lcsSeq(a, b) {
+  let best = 0;
+  let prev = new Array(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    const row = new Array(b.length + 1).fill(0);
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) { row[j] = prev[j - 1] + 1; if (row[j] > best) best = row[j]; }
+    }
+    prev = row;
+  }
+  return best;
+}
+
+/* 两个拼音序列有多像。
+
+   这里踩过一个真坑：第一版用的是「最长公共子序列 ÷ 用户说的音节数」，
+   于是只要名字**开头**读音对得上就能拿满分——
+   说「薯条」时，「薯条」和「薯条脆卜卜毛绒周边」同分并列，
+   页面凭空多问一句「你要的是哪一个」，而用户刚刚说得很清楚。
+   根源是那个比值对长名字太慷慨。
+
+   改成：长度相同且逐位相同 → 完全同音（1.0）；其余一律用对称的
+   Dice 系数 2·LCS ÷ (|q| + |c|)，名字比用户说的长得多时会被自然降权。 */
+function seqSimilarity(q, c) {
+  if (!q.length || !c.length) return 0;
+  if (q.length === c.length) {
+    let same = 0;
+    for (let i = 0; i < q.length; i++) if (q[i] === c[i]) same++;
+    if (same === q.length) return 1;      // 长度一样、每个音都一样 → 完全同音
+  }
+  const l = lcsSeq(q, c);
+  return l ? (2 * l) / (q.length + c.length) : 0;
+}
+
+/* 用户说的整段读音，是否**原封不动、连续、不跳字**地嵌在候选名里？
+   返回 { hit, at, len }：len 是最长的连续重合音节数，at 是它的位置。
+
+   为什么光靠比例不够：中文商品名是「修饰语 + 核心词」，核心词在**后面**。
+   用户把「蘸酱炸鸡」说成「咋鸡」时（zha→za 是平翘舌），
+   只有 2 / 4 个音节对上，Dice 系数只有 0.67，低于阈值就被判成「没听懂」——
+   可「你说的整段读音原封不动就是它名字的结尾」这件事本身是很硬的证据。
+   反过来「薯条」对「薯条脆卜卜毛绒周边」：比例同样是 2 / 9，很惨，
+   而且它落在**开头**——那是「用户只说了修饰语的一半，核心词还没说出口」，
+   不能当成认出了这件周边。同样的低比例，一个是核心词命中，一个是核心词缺失，
+   所以这里必须区分「嵌在哪儿」，不能只看像多少。 */
+function contiguousSeqRun(q, c) {
+  let len = 0, at = -1;
+  for (let i = 0; i + q.length <= c.length; i++) {
+    let k = 0;
+    while (k < q.length && c[i + k] === q[k]) k++;
+    if (k > len) { len = k; at = i; }
+  }
+  return { hit: len > 0 && len === q.length, at, len };
+}
+
+/* 返回 { exact, fuzzy, embed }：
+     exact —— 读音完全一致的程度；
+     fuzzy —— 把平翘舌、前后鼻音归并之后再比的程度；
+     embed —— 整段读音连续嵌进候选名的程度（仅在**嵌在非开头位置**时非零），
+              用来救「只说了后半段核心词」这类说法，见上面的注释。
+
+   注意 embed 与「长度比例」是互补的两件事：比例判断「像多少」，
+   embed 判断「说的那一段整体在不在里面、在哪个位置」。
+   单靠任何一个都会出错，所以两个都留着，让它们各自把自己擅长的情形捞回来。 */
+function pinyinMatch(query, candidate, table) {
+  if (!table) return { exact: 0, fuzzy: 0, embed: 0 };
+  const q = toPinyinSeq(normalizeUtterance(query), table);
+  const c = toPinyinSeq(normalizeUtterance(candidate), table);
+  if (q.length < 2 || !c.length) return { exact: 0, fuzzy: 0, embed: 0 };
+  const fq = fuzzyPinyinSeq(q), fc = fuzzyPinyinSeq(c);
+  const run = contiguousSeqRun(fq, fc);
+  return {
+    exact: seqSimilarity(q, c),
+    fuzzy: seqSimilarity(fq, fc),
+    // at > 0 才给分：嵌在开头说明用户说的只是名字的前半截，核心词还没出现
+    embed: (run.hit && run.at > 0) ? q.length / c.length : 0
+  };
+}
+
+
 /* 商品名的规格后缀。剥掉它们是为了让「巨无霸」也能匹配到「巨无霸三件套」，
    但反过来不能用它盖过单品——见 corePick 的规则。 */
 const NAME_SUFFIX = /(套餐|三件套|四件套|单品精选|随心选|双人餐|四件套随心选|三件套随心选)$/;
@@ -435,14 +653,16 @@ function corePick(ties, items) {
 }
 
 /* 在整份菜单里找 query 最可能指向的餐品。
-   返回 { best, ties, alsoConsider }：
+   返回 { best, ties, alsoConsider, top }：
      - ties 是「和第一名分数接近」的候选，页面拿它问「你是想要 A 还是 B」；
      - alsoConsider 是「已经认定了单品，但菜单里还有更大的套装」，
        页面只需要顺口提一句，不该反过来打断用户。
+     - top 是第一名的分数。多候选择优（语音识别一次会给好几个转写）
+       要靠它判断「这句话有没有被真正理解」。
    歧义不猜，但也别把用户说得很清楚的话当成歧义。 */
-function matchItems(query, items, aliases) {
+function matchItems(query, items, aliases, table) {
   const q = normalizeUtterance(query);
-  if (!q) return { best: null, ties: [], alsoConsider: [] };
+  if (!q) return { best: null, ties: [], alsoConsider: [], top: 0 };
 
   const scored = new Map();       // code -> score
   const bump = (code, sc) => { if (!scored.has(code) || scored.get(code) < sc) scored.set(code, sc); };
@@ -461,10 +681,30 @@ function matchItems(query, items, aliases) {
     bump(item.code, scoreName(q, name));
     if (bare && bare !== name) bump(item.code, scoreName(q, bare) - 3);
   }
+  // 3) 拼音层：字面对不上时按读音再找一遍。这是「识别不准」的主要补救手段。
+  //    分数刻意压在 78 以内——只要字面上对得上（最低一档 70 分的包含关系除外），
+  //    字面永远优先；但字面完全失配时，读音对得上就是最强的证据。
+  //    三条通路从强到弱：整段同音 → 归并模糊音后整段同音 → 整段读音嵌进名字中后段。
+  //    最后那条分数压在 60~74，永远低于字面命中，所以它只会「救回没听懂」，
+  //    不会「抢走已经认出来的东西」。
+  if (table) {
+    for (const item of items) {
+      const pm = pinyinMatch(q, item.name, table);
+      if (pm.exact >= 0.75) bump(item.code, 78 * pm.exact);
+      else if (pm.fuzzy >= 0.8) bump(item.code, 74 * pm.fuzzy);
+      else if (pm.embed >= 0.5) bump(item.code, 60 + 14 * pm.embed);
+    }
+    for (const alias of Object.keys(aliases || {})) {
+      const pm = pinyinMatch(q, alias, table);
+      if (pm.exact >= 0.75) { for (const c of aliases[alias]) bump(c, 77 * pm.exact); }
+      else if (pm.fuzzy >= 0.8) { for (const c of aliases[alias]) bump(c, 73 * pm.fuzzy); }
+      else if (pm.embed >= 0.5) { for (const c of aliases[alias]) bump(c, 58 + 14 * pm.embed); }
+    }
+  }
 
   const list = [...scored.entries()].filter(([, sc]) => sc >= 45)
     .sort((a, b) => b[1] - a[1]);
-  if (!list.length) return { best: null, ties: [], alsoConsider: [] };
+  if (!list.length) return { best: null, ties: [], alsoConsider: [], top: 0 };
 
   const top = list[0][1];
   // 分差 8 分以内算并列：语音场景下宁可多问一句，也不要替用户猜错
@@ -475,15 +715,15 @@ function matchItems(query, items, aliases) {
   //   用户明明指名要套装，却被换成单品。
   const full = items.filter(it => normalizeUtterance(it.name) === q).map(it => it.code);
   if (full.length === 1 && ties.indexOf(full[0]) >= 0) {
-    return { best: full[0], ties: [full[0]],
+    return { best: full[0], ties: [full[0]], top,
              alsoConsider: ties.filter(c => c !== full[0]).slice(0, 3) };
   }
 
   // 优先级 2：并列候选的核心名相同、且不带后缀的单品唯一 → 认定那个单品
   const core = corePick(ties, items);
-  if (core) return { best: core.best, ties: [core.best], alsoConsider: core.also };
+  if (core) return { best: core.best, ties: [core.best], alsoConsider: core.also, top };
 
-  return { best: list[0][0], ties, alsoConsider: [] };
+  return { best: list[0][0], ties, alsoConsider: [], top };
 }
 
 /* 把一句话解析成结构化的意图。规则优先、可预测——
@@ -536,32 +776,34 @@ function parseUtterance(raw, ctx) {
   const items = (ctx && ctx.items) || [];
   const aliases = (ctx && ctx.aliases) || {};
   const homophones = (ctx && ctx.homophones) || {};
+  const table = (ctx && ctx.pinyin) || null;
   const storeCount = (ctx && ctx.storeCount) || 0;
   const inStoreStep = !!(ctx && ctx.inStoreStep);
 
   const s = applyHomophones(normalizeUtterance(raw), homophones);
-  if (!s) return { intent: 'unknown', raw: String(raw || ''), ties: [], alsoConsider: [] };
+  if (!s) return { intent: 'unknown', raw: String(raw || ''), ties: [], alsoConsider: [], matchScore: 0 };
 
   // 门店步骤优先认序号
   if (inStoreStep) {
     const pick = parseStorePick(s, storeCount);
-    if (pick) return { intent: 'pick-store', index: pick, raw, ties: [], alsoConsider: [] };
+    if (pick) return { intent: 'pick-store', index: pick, raw, ties: [], alsoConsider: [], matchScore: 100 };
   }
 
   // 纯数字（在非门店步骤）当作数量指令
   if (/^[一二三四五六七八九十\d]{1,3}$/.test(s)) {
     const n = cnNumToInt(s);
-    if (n) return { intent: 'set-qty', qty: n, raw, ties: [], alsoConsider: [] };
+    if (n) return { intent: 'set-qty', qty: n, raw, ties: [], alsoConsider: [], matchScore: 60 };
   }
 
   for (const [name, pat] of INTENTS) {
     if (!pat) continue;
     if (pat.test(s)) {
       if (name === 'remove') {
-        const m = matchItems(s, items, aliases);
-        return { intent: 'remove', code: m.best, ties: m.ties, alsoConsider: [], raw };
+        const m = matchItems(s, items, aliases, table);
+        return { intent: 'remove', code: m.best, ties: m.ties, alsoConsider: [],
+                 matchScore: m.top || 0, raw };
       }
-      return { intent: name, raw, ties: [], alsoConsider: [] };
+      return { intent: name, raw, ties: [], alsoConsider: [], matchScore: 100 };
     }
   }
 
@@ -573,12 +815,36 @@ function parseUtterance(raw, ctx) {
     if (n && n >= 1 && n <= 20) qty = n;
   }
   let name = s.replace(QTY_PAT, '').replace(VERB_PAT, '').replace(/[了吧呢啊呀哦嘛]+$/g, '');
-  if (!name) return { intent: 'unknown', raw, ties: [], alsoConsider: [] };
+  if (!name) return { intent: 'unknown', raw, ties: [], alsoConsider: [], matchScore: 0 };
 
-  const m = matchItems(name, items, aliases);
-  if (!m.best) return { intent: 'unknown', raw, query: name, ties: [], alsoConsider: [] };
+  const m = matchItems(name, items, aliases, table);
+  if (!m.best) return { intent: 'unknown', raw, query: name, ties: [], alsoConsider: [], matchScore: 0 };
   return { intent: 'add', code: m.best, ties: m.ties, alsoConsider: m.alsoConsider || [],
-           qty, query: name, raw };
+           qty, query: name, matchScore: m.top || 0, raw };
+}
+
+/* ---- 从多个转写里挑出「最被理解的那一句」 ----
+
+   中文语音识别的第一名经常是错的，但备选里往往就有对的。
+   只用第一名等于把这个信息量最大的信号白白扔掉。
+
+   parseScore 回答的是「这句话被真正理解了吗」：
+     认出了具体商品（分数随匹配质量走）＞ 明确控制指令 ＞ 完全没听懂。
+   同为控制指令时按识别器自己的置信度排。 */
+
+function parseScore(p) {
+  if (!p) return -1;
+  switch (p.intent) {
+    case 'unknown':     return 0;
+    case 'add':         return 55 + (p.matchScore || 0) * 0.4;
+    case 'remove':      return p.code ? 50 + (p.matchScore || 0) * 0.4 : 8;
+    case 'pick-store':  return 70;
+    default:            return 60;      // 控制指令：明确，但没携带商品信息
+  }
+}
+
+function rankCandidates(cands) {
+  return cands.slice().sort((a, b) => (b.score - a.score) || (b.conf - a.conf));
 }
 
 /* 门店名匹配：用最长公共子串，而不是字符覆盖率。
@@ -604,17 +870,29 @@ function lcsLength(a, b) {
   return best;
 }
 
-function storeScore(query, name) {
+function storeScore(query, name, table) {
   const q = normalizeUtterance(query), n = normalizeUtterance(name);
   if (!q || !n) return 0;
   const l = lcsLength(q, n);
   // 主看最长公共子串长度，次看它占用户所说长度的比例
-  return l * 10 + (l / Math.max(1, Math.min(q.length, n.length))) * 10;
+  let sc = l * 10 + (l / Math.max(1, Math.min(q.length, n.length))) * 10;
+  // 店名同样会被听错字（「天府三街」→「天府三阶」），所以也加一点拼音分。
+  // 权重刻意压得很小：门店名的区分靠的是「哪几个字连在一起」，
+  // 读音只是补充证据，不能让同音字把两家店的分差抹平。
+  if (table) {
+    const pm = pinyinMatch(q, n, table);
+    // 店名普遍很长（「麦当劳成都天府三街餐厅」），用户往往只说中间那截
+    // （「天府三街」），所以 embed 这一路对门店尤其有用，不能漏掉。
+    sc += Math.max(pm.exact, pm.fuzzy, pm.embed) * 6;
+  }
+  return sc;
 }
 
 globalThis.__MCVOICE__ = {
   cnNumToInt, normalizeUtterance, applyHomophones, scoreName,
-  matchItems, parseUtterance, parseStorePick, lcsLength, storeScore
+  matchItems, parseUtterance, parseStorePick, lcsLength, storeScore,
+  toPinyinSeq, fuzzyPinyinSeq, pinyinMatch, seqSimilarity, contiguousSeqRun, expandPinyin,
+  parseScore, rankCandidates
 };
 /* ---VOICE-END--- */
 
@@ -647,6 +925,9 @@ const STEPS = {
     say: '这一单到这里就结束了。', chips: ['重新点一单'] }
 };
 
+/* 总步数从 STEPS 自己算出来，加一步就不用改两处 */
+const TOTAL_STEPS = Math.max(...Object.values(STEPS).map(s => s.no));
+
 const State = {
   step: 'welcome',
   stores: [],
@@ -657,6 +938,7 @@ const State = {
   batch: { category: null, offset: 0 },
   pendingTies: null, // 待消歧的候选
   orderResult: null,
+  lastHeard: '',     // 最近一次识别到的原话（屏幕上回显 + 没听懂时念出来）
   started: false
 };
 
@@ -716,6 +998,8 @@ function announce(text, opts) {
 const SR_CTOR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog = null, listening = false, wantListen = false, micBlocked = false;
 let micUnavailableMsg = '';
+// 连续自动重启的次数：用来在异常情况（浏览器立刻又结束）下退避，避免空转
+let restarts = 0;
 
 /* 语音能力不可用时的统一说法。抽成常量是因为它要在两个地方出现：
    用户点麦克风时，以及流程开始时——两处必须说同一件事。 */
@@ -732,29 +1016,101 @@ function speechSupport() {
   };
 }
 
+/* ---- 听到原文回显 ----
+
+   识别不准时，这一条是用户唯一的抓手：分不清「麦克风没听见」和「听见了但听错了」，
+   就无从决定该重说一遍、还是换个说法。所以每一次识别——包括说话途中的中间结果——
+   都如实显示出来，一个字都不加工。 */
+function showHeard(text, opts) {
+  const o = opts || {};
+  const box = $('heard');
+  if (!box) return;
+  const t = String(text == null ? '' : text).trim();
+  if (!t) {
+    box.hidden = true;
+    State.lastHeard = '';
+    return;
+  }
+  const lbl = $('heardLbl');
+  if (lbl) lbl.textContent = o.interim ? '正在听' : '听到原文';
+  box.classList.toggle('live', !!o.interim);
+  $('heardVal').textContent = t + (o.note ? '　' + o.note : '');
+  box.hidden = false;
+  if (!o.interim) State.lastHeard = t;
+}
+
+/* ---- 一次识别会给好几个转写，逐个试着理解，挑最有把握的那个 ----
+
+   打分（parseScore）与排序（rankCandidates）都是纯函数，放在上面的理解核里，
+   由 tests/test_voice.mjs 原样抽出执行——这段「选哪一句」的逻辑
+   最终决定了用户说的话会不会被听错，必须能被单测盯住，不能只活在浏览器里。 */
+function interpret(text) {
+  const clean = String(text || '').trim();
+  if (!clean) return null;
+  const parsed = parseUtterance(clean, {
+    items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
+    pinyin: PY,
+    storeCount: State.stores.length, inStoreStep: State.step === 'store'
+  });
+  return { text: clean, parsed, score: parseScore(parsed), conf: 0 };
+}
+
+function handleAlternatives(alts) {
+  const cands = [];
+  for (const a of alts) {
+    const it = interpret(a.text);
+    if (it) { it.conf = a.conf || 0; cands.push(it); }
+  }
+  if (!cands.length) return;
+  const win = rankCandidates(cands)[0];
+  const top1 = alts[0].text;
+  // 如果采纳的不是识别第一名，要说清是「按哪一句理解的」——
+  // 用户看到原文对不上时，才不会以为程序在瞎猜。
+  showHeard(top1, { note: win.text !== top1 ? '（按「' + win.text + '」理解）' : '' });
+  handleUtterance(win.text, { fromSpeech: true });
+}
+
 function buildRecognition() {
   if (!SR_CTOR) return null;
   const r = new SR_CTOR();
   r.lang = 'zh-CN';
   r.continuous = true;
-  r.interimResults = false;
-  r.maxAlternatives = 1;
+  // 打开中间结果：说话过程中就能把「正在听：巨无…」显示出来。
+  // 没有它，用户说完一句到看见反应之间是纯黑箱，只能靠猜。
+  r.interimResults = true;
+  // 要多个候选：第一名错了还有备选可救（见 handleAlternatives）
+  r.maxAlternatives = 5;
+
   r.onresult = (ev) => {
+    let interim = '';
+    const finals = [];
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
-      if (!ev.results[i].isFinal) continue;
-      const text = ev.results[i][0].transcript;
-      if (text && text.trim()) handleUtterance(text);
+      const res = ev.results[i];
+      const alts = [];
+      for (let k = 0; k < res.length; k++) {
+        const t = (res[k].transcript || '').trim();
+        if (t) alts.push({ text: t, conf: typeof res[k].confidence === 'number' ? res[k].confidence : 0 });
+      }
+      if (!alts.length) continue;
+      if (res.isFinal) finals.push(alts);
+      else if (!interim) interim = alts[0].text;
     }
+    if (interim) showHeard(interim, { interim: true });
+    for (const alts of finals) handleAlternatives(alts);
   };
+
   r.onerror = (ev) => {
     const map = {
       'not-allowed':    '麦克风权限被拒绝了。请在浏览器地址栏的权限设置里允许麦克风，然后按「开始使用」重试；也可以直接用下面的输入框打字。',
       'service-not-allowed': '这个浏览器的语音识别服务不可用。请改用 Chrome 或 Edge；也可以直接在下面的输入框打字。',
       'audio-capture':  '没有找到麦克风设备。请插上麦克风或检查系统录音设置；也可以直接在下面的输入框打字。',
-      'no-speech':      '',
       'network':        '语音识别需要联网，当前网络不通。可以直接在下面的输入框打字。',
+      'no-speech':      '',
       'aborted':        ''
     };
+    // 「没听到声音」不播报（每次停顿都出声很烦），但要在屏幕上留痕：
+    // 用户至少能看出「麦克风是活的、只是没听见」，而不是以为程序卡住了。
+    if (ev.error === 'no-speech') showHeard('（这一句没听到声音）');
     const msg = map[ev.error];
     if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed' || ev.error === 'audio-capture') {
       micBlocked = true;
@@ -763,14 +1119,25 @@ function buildRecognition() {
     }
     if (msg) { announce(msg, { alert: msg }); }
   };
+
   r.onend = () => {
     listening = false;
     syncMicButton();
-    // Chrome 会在静音几秒后自动结束识别，这里拉起来继续听
+    // Chrome 会在静音几秒后自动结束识别，这里拉起来继续听。
+    // 加一个退避：如果浏览器立刻又结束（权限/网络异常时会发生），
+    // 无脑重启会变成每秒几十次的空转，所以第二次起延后一点。
     if (wantListen && !micBlocked) {
-      try { r.start(); listening = true; syncMicButton(); } catch (e) { /* 已经在跑了 */ }
+      restarts++;
+      const delay = restarts > 3 ? 500 : 60;
+      setTimeout(() => {
+        if (!wantListen || micBlocked) return;
+        try { r.start(); listening = true; syncMicButton(); }
+        catch (e) { /* 已经在跑了 */ }
+      }, delay);
     }
   };
+
+  r.onstart = () => { restarts = 0; listening = true; syncMicButton(); };
   return r;
 }
 
@@ -782,18 +1149,35 @@ function startListening() {
     return false;
   }
   wantListen = true;
+  restarts = 0;
   try { recog.start(); listening = true; syncMicButton(); return true; }
   catch (e) { listening = true; syncMicButton(); return true; }
 }
-function stopListening() { wantListen = false; if (recog) { try { recog.stop(); } catch (e) {} } listening = false; syncMicButton(); }
+function stopListening() {
+  wantListen = false;
+  if (recog) { try { recog.stop(); } catch (e) {} }
+  listening = false;
+  syncMicButton();
+}
 function pauseRecognition() { if (recog && listening) { try { recog.stop(); } catch (e) {} } }
 function resumeRecognition() { if (recog && wantListen && !micBlocked) { try { recog.start(); } catch (e) {} } }
 
 function syncMicButton() {
   const b = $('micBtn');
-  if (!State.started) { b.textContent = '开始使用'; b.setAttribute('aria-pressed', 'false'); return; }
-  b.textContent = listening ? '正在听你说话 —— 按一下停止' : '按一下开始说话';
+  const note = $('micNote');
+  if (!State.started) {
+    b.textContent = '开始使用';
+    b.setAttribute('aria-pressed', 'false');
+    if (note) note.textContent = '按一下开始，之后随时可以按它开关说话';
+    return;
+  }
+  b.textContent = listening ? '停止说话' : '开始说话';
   b.setAttribute('aria-pressed', listening ? 'true' : 'false');
+  if (note) {
+    note.textContent = listening
+      ? '正在听你说话。说完稍等一下，我会把听到的原话显示出来再处理。'
+      : '已经停止拾音。按一下继续说话。';
+  }
 }
 
 /* ==========================================================================
@@ -815,7 +1199,7 @@ function itemPriceText(item) {
 
 function renderStep() {
   const s = STEPS[State.step];
-  $('stepNo').textContent = 'STEP ' + s.no;
+  $('stepNo').textContent = 'STEP ' + s.no + ' / ' + TOTAL_STEPS;
   $('stepName').textContent = s.name;
   const chips = $('chips');
   chips.innerHTML = '';
@@ -824,7 +1208,27 @@ function renderStep() {
     li.textContent = c;                       // 用 textContent，避免任何注入
     chips.appendChild(li);
   }
+  renderProgress();
   renderBody();
+}
+
+/* 进度条：让「走到第几步了」不用读字也看得出来。
+   纯装饰（外层 aria-hidden），准确的步骤信息由 stepNo/stepName 和播报负责，
+   所以不会让屏幕阅读器把同一件事念两遍。 */
+function renderProgress() {
+  const ol = $('progress');
+  if (!ol) return;
+  const now = STEPS[State.step].no;
+  if (ol.children.length !== TOTAL_STEPS) {
+    ol.innerHTML = '';
+    for (let i = 0; i < TOTAL_STEPS; i++) ol.appendChild(document.createElement('li'));
+  }
+  for (let i = 0; i < ol.children.length; i++) {
+    const n = i + 1;
+    ol.children[i].className = n < now ? 'done' : (n === now ? 'now' : '');
+  }
+  const txt = $('progressText');
+  if (txt) txt.textContent = now + ' / ' + TOTAL_STEPS;
 }
 
 function renderBody() {
@@ -1161,10 +1565,18 @@ function createOrderRemote() {
 /* ==========================================================================
    一句话进来的总入口
    ========================================================================== */
-function handleUtterance(raw) {
+function handleUtterance(raw, opts) {
+  const o = opts || {};
   const text = String(raw || '').trim();
   if (!text) return;
+  // 「你说」和「听到原文」是两件事，刻意分开显示：
+  //   听到原文 = 语音识别给的原话（可能是几个候选里更好的那个）
+  //   你说     = 页面最终按哪句话去理解的
+  // 两者不一致时用户一眼就能看出系统做了修正，而不是觉得它在瞎猜。
   setSaid('你说：' + escapeHtml(text) + '　<span class="sub">正在处理…</span>', { html: true });
+  // 走语音通道时，回显已由 handleAlternatives 写好（含「按哪一句理解」的说明），
+  // 这里不能覆盖；打字通道没有那一步，就照原样回显。
+  if (!o.fromSpeech) showHeard(text);
 
   if (!State.started) {
     if (/^(开始|开始吧|开始使用|启动|来吧|嗯|嗯开始|好|好的)$/.test(normalizeUtterance(text))) { begin(); return; }
@@ -1186,6 +1598,7 @@ function handleUtterance(raw) {
 
   const parsed = parseUtterance(text, {
     items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
+    pinyin: PY,
     storeCount: State.stores.length, inStoreStep: State.step === 'store'
   });
   dispatch(parsed, text);
@@ -1196,12 +1609,17 @@ State.resolveTie = function (text) {
   const qty = State.pendingTies.qty;
   const m = matchItems(text, ties.map(c => itemByCode(c)).filter(Boolean),
                        Object.fromEntries(Object.entries(DATA.aliases)
-                         .map(([k, v]) => [k, v.filter(c => ties.includes(c))])));
+                         .map(([k, v]) => [k, v.filter(c => ties.includes(c))])),
+                       PY);
   // 也接受「第一个 / 第二个」
   const pick = parseStorePick(text, ties.length);
   let code = m.best;
   if (pick) code = ties[pick - 1];
-  if (!code) { announce('没听清是哪一个。可以说名字，或者说「第一个」「第二个」。'); return false; }
+  if (!code) {
+    announce('没听清是哪一个' + (State.lastHeard ? '（我听到的是「' + State.lastHeard + '」）' : '')
+             + '。可以说名字，或者说「第一个」「第二个」。');
+    return false;
+  }
   State.pendingTies = null;
   addToCart(code, qty || 1);
   return true;
@@ -1259,8 +1677,13 @@ function dispatch(p, raw) {
       // 类目名也算一种说法：「汉堡」「饮品」
       if (State.step === 'browse' && speakCategory(raw)) return;
       if (State.step === 'store' && pickStoreByName(raw)) return;
-      announce('没听懂「' + raw + '」。你可以说「我能说什么」听一遍当前能用的说法。',
-               { alert: '没听懂' });
+      // 没听懂时**必须**把识别到的原话念出来。
+      // 否则用户无法区分「麦克风没听见」「听见了但识别错了」「识别对了但我没理解」——
+      // 这三种情况下该做的事完全不同（重说一遍 / 换个说法 / 换个说法），
+      // 而之前的版本只回一句「没听懂」，等于把判断责任推给了用户。
+      announce('我听到的是「' + raw + '」，但没认出是哪个。'
+               + '可以说得短一点，比如「巨无霸」「可乐」；也可以说「我能说什么」听一遍当前能用的说法。',
+               { alert: '没听懂：' + raw });
   }
 }
 
@@ -1315,7 +1738,7 @@ function pickStoreByName(text) {
   if (!q) return false;
   let best = -1, bestScore = 0, second = 0;
   State.stores.forEach((s, i) => {
-    const sc = storeScore(q, s.storeName);
+    const sc = storeScore(q, s.storeName, PY);
     if (sc > bestScore) { second = bestScore; bestScore = sc; best = i; }
     else if (sc > second) { second = sc; }
   });
@@ -1361,6 +1784,7 @@ function resetAll(msg) {
   State.pendingTies = null; State.batch = { category: null, offset: 0 };
   State.orderResult = null;
   State.step = State.store ? 'browse' : 'store';
+  showHeard('');
   renderStep();
   announce(msg || '已经清空购物车。');
 }
@@ -1630,8 +2054,18 @@ function runAudit() {
   for (const [label, node] of samples) {
     if (!node || seen.has(node)) continue;
     seen.add(node);
+    /* 过渡和动画进行中读到的颜色是「半路」的，不是最终状态。
+       这里的坑是真实的：主按钮从品牌黄过渡到深红的那 0.12 秒里，
+       文字已经是白的、背景还停在黄的——量出来 1.6:1，
+       而稳态（深红底白字）其实是达标的 7.6:1。
+       无头浏览器（--virtual-time-budget）里过渡时钟不走、永远停在起点，
+       这个假象会一直挂着。WCAG 对比度说的是稳定状态，
+       所以采样前临时关掉过渡和动画，量完恢复。 */
+    const prevTransition = node.style.transition, prevAnimation = node.style.animation;
+    node.style.transition = 'none'; node.style.animation = 'none';
     const fg = parseRgb(getComputedStyle(node).color);
     const bg = effectiveBackground(node);
+    node.style.transition = prevTransition; node.style.animation = prevAnimation;
     if (!fg || !bg) continue;
     const ratio = contrast(fg, bg);
     const ok = ratio >= 7;     // WCAG AAA 级正文要求
@@ -1719,6 +2153,10 @@ function init() {
   // 本地模式拉过门店后，默认就停在第 2 步让人选
   State.step = 'welcome';
 
+  // 展开拼音表（「音节 → 汉字串」→「字 → 音节」）。缺表不报错：
+  // 没有它页面照样能用，只是少了同音容错这一层。
+  PY = expandPinyin(DATA.pinyin);
+
   pickVoice();
   if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = pickVoice;
 
@@ -1792,9 +2230,10 @@ function init() {
 
   // 暴露给自动化测试：状态机、匹配器、渲染入口
   globalThis.__MCVOICE_APP__ = {
-    State, STEPS, handleUtterance, begin, runAudit, dispatch,
+    State, STEPS, TOTAL_STEPS, handleUtterance, begin, runAudit, dispatch,
     matchItems, parseUtterance, estimatePrice, itemByCode, speechSupport,
-    resetAll, chooseTakeWay, doQuote, goStores
+    resetAll, chooseTakeWay, doQuote, goStores,
+    interpret, handleAlternatives, showHeard, renderStep, parseScore, rankCandidates
   };
 
   // URL 带 ?audit=1 时自动跑一次自检，方便自动化验证

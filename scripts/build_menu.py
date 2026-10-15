@@ -187,6 +187,52 @@ def load_raw(name: str) -> dict:
     return json.loads((DATA / name).read_text(encoding="utf-8"))
 
 
+def load_pinyin_table() -> dict[str, str]:
+    """读取「音节 → 汉字串」的拼音表（data/pinyin_table.json）。
+
+    表是可选的：没有它页面照样能跑，只是少一层同音容错。
+    所以这里读取失败不报错、返回空表，由页面自行降级。
+    """
+    path = DATA / "pinyin_table.json"
+    if not path.exists():
+        print("提示：没有 data/pinyin_table.json，同音容错会降级。"
+              "可执行 python scripts/build_pinyin.py 生成（需要 pypinyin）。")
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload.get("syllables") or {}
+
+
+def expand_pinyin(grouped: dict[str, str]) -> dict[str, str]:
+    """把「音节 → 汉字串」展开成「字 → 音节」，供构建期校验使用。"""
+    flat: dict[str, str] = {}
+    for syllable, chars in grouped.items():
+        for ch in chars:
+            flat[ch] = syllable
+    return flat
+
+
+def to_pinyin(name: str, flat: dict[str, str]) -> str:
+    """把商品名转成拼音串（表外字符原样保留，便于两侧同字仍能对上）。"""
+    return "".join((flat.get(ch) or ch) for ch in name)
+
+
+def check_homophone_collisions(items: list[dict], flat: dict[str, str]) -> list[str]:
+    """找出「拼音完全相同但商品不同」的项。
+
+    这不是错误——菜单里本来就有同音不同字的商品（用户说出来也确实会混），
+    但值得在构建时打印出来，因为这类商品必须靠字面层或追问来区分，
+    不能指望拼音层。漏掉这行日志，就会出现「怎么老是问我是哪一个」而找不到原因。
+    """
+    if not flat:
+        return []
+    groups: dict[str, list[str]] = {}
+    for it in items:
+        py = to_pinyin(it["name"], flat)
+        if py:
+            groups.setdefault(py, []).append(it["name"])
+    return [f"{py} → {names}" for py, names in groups.items() if len(names) > 1]
+
+
 def build_aliases(codes: set[str]) -> dict[str, list[str]]:
     """校验并返回口语别名表。任何指向不存在编码的别名都视为构建错误。
 
@@ -253,6 +299,7 @@ def assemble(menu_payload: dict, stores: list[dict], coupons: list[dict],
 
     aliases = build_aliases(codes)
     store = next(s for s in stores if s["storeCode"] == menu_payload["arguments"]["storeCode"])
+    pinyin_table = load_pinyin_table()
 
     return {
         "source": {
@@ -272,6 +319,11 @@ def assemble(menu_payload: dict, stores: list[dict], coupons: list[dict],
         "items": items,
         "aliases": aliases,
         "homophones": HOMOPHONE_FIXES,
+        # 音节 → 汉字串（「ke」→「可渴克刻客课…」）。页面把它展开成
+        # 「字 → 音节」后，就能把「用户说的」和「菜单里的」都转成读音再比一次，
+        # 这样语音识别把字听错成同音字时还能找回来。
+        # 按音节存而不是按字存，是为了把这张 3700 多字的表压到 16 KB。
+        "pinyin": pinyin_table,
         "frequent": menu_payload.get("frequent"),
         "coupons": coupons,
         "couponLimitation": COUPON_LIMITATION,
@@ -292,10 +344,18 @@ def main() -> int:
     items = payload["items"]
     store = payload["source"]
     with_price = sum(1 for it in items if it["price"] is not None)
+    flat = expand_pinyin(payload["pinyin"])
     print(f"menu.json 已生成：{len(items)} 项餐品（{with_price} 项有价格）、"
           f"{len(payload['categories'])} 个类目、{len(payload['aliases'])} 条口语别名、"
-          f"{len(payload['homophones'])} 条误听纠正、{len(payload['coupons'])} 张券")
+          f"{len(payload['homophones'])} 条误听纠正、{len(payload['coupons'])} 张券、"
+          f"{len(flat)} 个拼音字")
     print(f"采样门店：{store['storeName']}（{store['storeCode']}）")
+
+    collisions = check_homophone_collisions(items, flat)
+    if collisions:
+        print(f"同音商品 {len(collisions)} 组（拼音层无法区分，靠字面层或追问）：")
+        for line in collisions:
+            print("  ·", line)
     return 0
 
 

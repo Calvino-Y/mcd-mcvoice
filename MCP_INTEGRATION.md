@@ -135,6 +135,7 @@ Streamable HTTP 的三条硬规则（踩过的坑）：
 | `items` | array | 展示顺序按类目走：`code` `name` `category` `price`（元）`originalPrice` `discountType` `canWithOrder` |
 | `aliases` | object | 口语说法 → **编码数组**（多候选，交歧义逻辑裁决），86 条；构建时校验全部编码存在 |
 | `homophones` | object | 同音误听 → 正确写法，27 条 |
+| `pinyin` | object | 拼音容错表，**按音节分组**存（`{"ke": "可渴克刻客课…"}`），396 个音节 / 3766 个汉字（GB2312 一级），16 KB。由 `scripts/build_pinyin.py` 构建期用 pypinyin 生成到 `data/pinyin_table.json`，页面启动时展开成「字 → 音节」。**表必须比菜单宽**：识别错的字绝大多数是菜单外的字（「可乐」→「渴乐」，「渴」不在菜单里），只收菜单用字的表在最该救的时刻必然失效 |
 | `frequent` | object | 「我的常点」标记（来自 `data.frequent`） |
 | `coupons` | array | 券的播报用快照：`name` `price` `validFrom` `validTo` `weekdays` `timeFrom` `timeTo` `tags` |
 | `couponLimitation` | string | 券 ID 缺失的原文说明，页面可直接念给用户听 |

@@ -9,5 +9,7 @@ venv/
 Thumbs.db
 node_modules/
 _probe.html
+_probe2.html
 _preview.html
 _metrics.html
+_seg*.png

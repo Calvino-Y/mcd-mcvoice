@@ -193,6 +193,55 @@ if (build) {
         JSON.stringify(build));
 }
 
+/* ==================== 4b. 拼音表（同音容错的底座）====================
+   这一层的失败方式很隐蔽：表一旦缩水，拼音匹配就悄悄失效，
+   表现只是「说了没反应」——所以覆盖范围必须被断言盯住。 */
+console.log('\n4b. 拼音表');
+
+check('数据集里有拼音表', !!menu.pinyin && typeof menu.pinyin === 'object');
+check('拼音表按音节分组存放（不是逐字存，否则体积翻四倍）',
+      Object.values(menu.pinyin || {}).every((v) => typeof v === 'string'));
+{
+  const flat = {};
+  for (const syl of Object.keys(menu.pinyin || {})) {
+    for (const ch of menu.pinyin[syl]) flat[ch] = syl;
+  }
+  const n = Object.keys(flat).length;
+  check(`拼音表覆盖 ${n} 个汉字（够不够救「菜单外的错字」就看这个数）`, n >= 3000, `实际 ${n}`);
+  check('每个音节都是纯 ASCII 拼音', Object.keys(menu.pinyin).every((s) => /^[a-z]+$/.test(s)));
+
+  // 关键：错字本身必须能查到读音。第一版只收菜单里的字，
+  // 「可乐」被听成「渴乐」时「渴」查不到，整层失效——这条断言守的就是那个坑。
+  const beyond = ['渴', '书', '勺', '必', '封', '刺', '插', '咋'];
+  const missing = beyond.filter((c) => !flat[c]);
+  check('拼音表包含菜单之外、但会被听错的常用字', missing.length === 0, missing.join('、'));
+
+  // 菜单里每个汉字都必须能查到，否则那道菜永远容错不了
+  const notCovered = new Set();
+  for (const it of menu.items) {
+    for (const ch of it.name) {
+      if (/[\u4e00-\u9fa5]/.test(ch) && !flat[ch]) notCovered.add(ch);
+    }
+  }
+  check('菜单里的每个汉字都能查到读音', notCovered.size === 0, [...notCovered].join('、'));
+
+  // 拼音层的三条通路必须都在，少一条就会有一整类「说了没反应」悄悄回来：
+  //   exact  —— 整段同音（「渴乐」→「可乐」）
+  //   fuzzy  —— 平翘舌/前后鼻音归并后同音（「苏条」→「薯条」）
+  //   embed  —— 整段读音嵌在名字中后段（「咋鸡」→「蘸酱炸鸡」，只说核心词的场景）
+  // 这里只查源码里有没有这三条分支，语义由 tests/test_voice.mjs 盯。
+  const pinyinFn = html.match(/function\s+pinyinMatch[\s\S]*?\n\}/);
+  const matchFn = html.match(/function\s+matchItems[\s\S]*?\n\}/);
+  check('pinyinMatch 同时给出 exact / fuzzy / embed 三种相似度',
+        !!pinyinFn && /exact\s*:/.test(pinyinFn[0]) && /fuzzy\s*:/.test(pinyinFn[0])
+        && /embed\s*:/.test(pinyinFn[0]));
+  check('matchItems 里三种相似度都接了评分通路（有通路才救得回，缺一条就有一类说法听不回来）',
+        !!matchFn && /pm\.exact/.test(matchFn[0]) && /pm\.fuzzy/.test(matchFn[0])
+        && /pm\.embed/.test(matchFn[0]));
+  check('embed 只在读音嵌在**非开头**位置时才给分（嵌在开头说明用户只说出了修饰语）',
+        !!html.match(/run\.hit\s*&&\s*run\.at\s*>\s*0/));
+}
+
 const priceM = html.match(/const\s+PRICE_SNAPSHOT\s*=\s*\(LIVE\s*&&\s*LIVE\.price\)\s*\|\|\s*([\s\S]*?);\s*\n/);
 let priceSnap = null;
 if (priceM) { try { priceSnap = JSON.parse(priceM[1]); } catch (e) { priceSnap = null; } }
@@ -215,6 +264,19 @@ check('读取 serve.py 注入的 window.__LOCAL__', /window\.__LOCAL__/.test(inl
 check('使用 sessionStorage 键 mcvoice.live 做整页接管', html.includes("'mcvoice.live'")
       || html.includes('"mcvoice.live"'));
 check('有 ?audit=1 自动自检入口（便于自动化）', /audit=1/.test(inlineJs));
+
+/* 语音识别的配置直接决定「识别得准不准」，所以把它当结构断言盯住。
+   这三项每一项的退化都会让识别变差，而页面上一点报错都不会有。 */
+console.log('\n5b. 语音识别配置');
+check('向浏览器要多个转写候选（maxAlternatives > 1）',
+      /maxAlternatives\s*=\s*([2-9]|\d\d)/.test(inlineJs),
+      '只取第一名会浪费掉最有价值的信息：备选里往往就有对的那句');
+check('打开了中间结果（interimResults = true），说话过程中就能回显',
+      /interimResults\s*=\s*true/.test(inlineJs));
+check('识别结束后会自动拉起继续听（continuous + onend 重启）',
+      /continuous\s*=\s*true/.test(inlineJs) && /onend/.test(inlineJs));
+check('重启带退避，异常时不会变成每秒几十次的空转', /restarts/.test(inlineJs));
+check('采纳非第一名候选时会说明「按哪一句理解」', /按「/.test(inlineJs));
 
 /* ==================== 6. 无障碍骨架（静态可查的部分） ==================== */
 console.log('\n6. 无障碍骨架');
@@ -242,6 +304,13 @@ check('没有缺少 alt 的图片', (html.match(/<img\b/g) || []).length === 0
       || [...html.matchAll(/<img\b[^>]*>/g)].every((m) => /\balt\s*=/.test(m[0])));
 check('存在 sr-only 文本类（供屏幕阅读器补充说明）', /\.sr-only\b/.test(html));
 check('声明了 prefers-contrast 高对比度适配', /prefers-contrast/.test(html));
+/* 内置对比度审计必须在采样前关掉过渡和动画，量「稳定状态」。
+   不这样做的话：主按钮从品牌黄过渡到深红的 0.12 秒里，
+   文字已经是白的、背景还停在黄的，量出 1.6:1 的假警报——
+   无头浏览器（--virtual-time-budget）里过渡时钟不走，假警报会永远挂着。 */
+check('对比度审计在采样前关掉过渡与动画（量稳态，不量半路的颜色）',
+      /node\.style\.transition\s*=\s*'none'/.test(html)
+      && /node\.style\.animation\s*=\s*'none'/.test(html));
 check('声明了 prefers-reduced-motion 动效减弱适配', /prefers-reduced-motion/.test(html));
 
 /* ==================== 7. 关键交互节点齐备 ==================== */
@@ -250,12 +319,20 @@ console.log('\n7. 关键交互节点');
 const REQUIRED_IDS = [
   'main', 'live', 'alert', 'micBtn', 'repeatBtn', 'backBtn', 'helpBtn',
   'typeInput', 'sendBtn', 'body', 'chips', 'stepNo', 'stepName', 'said',
-  'auditBtn', 'auditOut', 'speakOn', 'allowOrder', 'fontScale', 'fontScaleVal', 'fontReset'
+  'auditBtn', 'auditOut', 'speakOn', 'allowOrder', 'fontScale', 'fontScaleVal', 'fontReset',
+  // 视觉改版新增：进度条 + 听到原文回显（少了它们，识别不准时用户没有任何抓手）
+  'progress', 'progressText', 'heard', 'heardLbl', 'heardVal', 'micNote'
 ];
 const presentIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
 const missing = REQUIRED_IDS.filter((id) => !presentIds.has(id));
 check(`${REQUIRED_IDS.length} 个关键节点 id 齐备`, missing.length === 0,
       `缺失：${missing.join('、')}`);
+
+check('进度条对屏幕阅读器隐藏（步骤信息已由 stepNo/stepName 播报，不重复念）',
+      /class="progress-wrap"[^>]*aria-hidden="true"/.test(html));
+check('进度条初始为空、由脚本按总步数填充', /<ol class="progress" id="progress"><\/ol>/.test(html));
+check('听到原文回显初始隐藏（没听过话时不占地方）',
+      /id="heard"[^>]*\shidden/.test(html));
 
 check('设置区有「允许创建订单」开关（不可逆动作的显式闸门）',
       /id="allowOrder"[^>]*type="checkbox"|type="checkbox"[^>]*id="allowOrder"/.test(html));

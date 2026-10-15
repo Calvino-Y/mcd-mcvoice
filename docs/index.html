@@ -7,120 +7,189 @@
 <title>麦声 McVoice · 用说的点麦当劳</title>
 <style>
 /* ==========================================================================
-   设计基调：简洁经典，一切为「听得懂、按得到」服务。
-   - 根字号 20px（浏览器默认 16px），可再放大到 32px
-   - 正文对比度 17:1，次要文字 8:1，按钮 18:1，全部超过 WCAG AAA(7:1)
+   设计基调：简洁经典 —— 暖白纸面、品牌黄做主行动、深红做状态，
+   留白撑起层级，不用渐变、不靠颜色单独传达信息。
+
+   无障碍红线（改样式时不许退让，tests/browser_check.py 每次都会验）：
+   - 根字号 20px（浏览器默认 16px），页内可再放大到 160%
+   - 正文对比度 ≥ 7:1（WCAG AAA）；次要文字 7.7:1；主按钮深字压品牌黄 12:1
    - 双色焦点环：白圈 + 黑环，浅色和深色控件上都看得见
-   - 不用渐变、不用装饰阴影、不靠颜色单独传达信息
+   - 可交互元素 ≥ 24×24（本项目按钮实际 52px 起，麦克风 104px）
+   - 动效全部在 prefers-reduced-motion 下关闭
+   配色取值（对比度均按 WCAG 相对亮度公式实算）：
+     暖白 #fffdf7 · 暖黑 #1a1410（17:1）· 次要 #5a5048（7.7:1）
+     品牌黄 #ffc72c + 黑字（12:1）· 深红 #a61914 + 白字（7.6:1）
    ========================================================================== */
 :root{
-  --bg:#ffffff; --panel:#f4f4f4; --panel-2:#ebebeb;
-  --ink:#111111; --muted:#4d4d4d; --line:#b0b0b0; --line-strong:#6b6b6b;
-  --accent:#0b3d91; --accent-ink:#ffffff;
-  --live:#a1121b;
-  --ok:#0b5f2a; --warn:#8a4b00; --bad:#a1121b;
-  --radius:10px;
+  --bg:#fffdf7; --panel:#fff8e8; --panel-2:#fdf1d8;
+  --card:#ffffff;
+  --ink:#1a1410; --muted:#5a5048; --line:#e2d8c6; --line-strong:#b8a888;
+  --brand:#ffc72c; --brand-ink:#1a1410;
+  --accent:#a61914; --accent-ink:#ffffff;
+  --live:#a61914;
+  --ok:#0a5c28; --warn:#7a4100; --bad:#a61914;
+  --radius:14px; --radius-sm:10px;
+  --shadow:0 1px 2px rgba(26,20,16,.06), 0 6px 18px -8px rgba(26,20,16,.14);
+  --ring:0 0 0 3px #fffdf7, 0 0 0 6px #1a1410;
   --fs:20px;
 }
 *{box-sizing:border-box}
-html{font-size:var(--fs)}
+html{font-size:var(--fs); scroll-behavior:smooth}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",
               "Microsoft YaHei","Source Han Sans SC",sans-serif;
-  font-size:1rem; line-height:1.75;
+  font-size:1rem; line-height:1.7;
   -webkit-text-size-adjust:100%;
+  background-image:radial-gradient(circle at 12% -6%, #fff3cf 0%, rgba(255,243,207,0) 42%);
+  background-repeat:no-repeat;
 }
-.wrap{max-width:44rem; margin:0 auto; padding:1.25rem 1.25rem 4rem}
+.wrap{max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem}
 
 /* 焦点：任何可聚焦元素都必须有清晰可见的焦点指示（WCAG 2.4.7 / 2.4.11） */
 :focus{outline:none}
-:focus-visible{outline:3px solid #ffffff; box-shadow:0 0 0 6px #111111; border-radius:6px}
+:focus-visible{outline:3px solid #ffffff; box-shadow:0 0 0 6px #1a1410; border-radius:8px}
 
 /* 跳到主内容：键盘用户第一个 Tab 就能用 */
 .skip{position:absolute; left:-9999px; top:0; z-index:99;
-  background:var(--ink); color:#fff; padding:.75rem 1.25rem; border-radius:0 0 var(--radius) 0;
+  background:#1a1410; color:#fff; padding:.75rem 1.25rem; border-radius:0 0 var(--radius) 0;
   font-weight:700; text-decoration:none}
 .skip:focus{left:0}
 
-header.site{border-bottom:3px solid var(--ink); padding-bottom:1rem; margin-bottom:1.5rem}
-.brand{display:flex; align-items:baseline; gap:.6rem; margin:0 0 .5rem}
-.brand b{font-size:1.25rem; letter-spacing:.02em}
-.brand span{color:var(--muted); font-size:.85rem; letter-spacing:.08em}
-h1{font-size:1.75rem; line-height:1.35; margin:.25rem 0 .5rem}
-.lede{margin:0; color:var(--muted); font-size:.95rem}
+/* ---- 页头 ---- */
+header.site{padding:1.25rem 0 1.5rem; margin-bottom:.5rem;
+  border-bottom:1px solid var(--line)}
+.brand{display:flex; align-items:center; gap:.6rem; margin:0 0 .75rem}
+.brand .mark{width:2.4rem; height:2.4rem; border-radius:12px; background:var(--brand);
+  display:inline-flex; align-items:center; justify-content:center; flex:none;
+  border:2px solid var(--ink); font-weight:800; font-size:1.1rem; color:var(--brand-ink)}
+.brand b{font-size:1.35rem; letter-spacing:.01em}
+.brand span{color:var(--muted); font-size:.8rem; letter-spacing:.14em; font-weight:600}
+h1{font-size:2.1rem; line-height:1.25; margin:0 0 .6rem; letter-spacing:-.01em}
+.lede{margin:0; color:var(--muted); font-size:.98rem; max-width:34rem}
 
-section{margin:2rem 0; padding-top:1.25rem; border-top:1px solid var(--line)}
-section:first-of-type{border-top:none; padding-top:0}
-h2{font-size:1.15rem; margin:0 0 .75rem; letter-spacing:.02em}
-h3{font-size:1rem; margin:1.25rem 0 .5rem; color:var(--muted)}
+section{margin:2.5rem 0 0}
+h2{font-size:1.3rem; margin:0 0 1rem; letter-spacing:-.005em;
+  display:flex; align-items:center; gap:.6rem}
+h2::before{content:""; width:.3rem; height:1.15em; background:var(--brand);
+  border-radius:999px; flex:none; border:1px solid #e0ac13}
+h3{font-size:1.02rem; margin:1.5rem 0 .6rem; color:var(--ink); font-weight:700}
+
+/* ---- 进度条：8 步走到哪了一目了然（纯视觉，步骤信息由主控区念出来） ---- */
+.progress-wrap{display:flex; align-items:center; gap:.75rem; margin-bottom:1rem}
+.progress{list-style:none; display:flex; gap:.3rem; margin:0; padding:0; flex:1}
+.progress li{flex:1; height:.6rem; border-radius:999px; background:var(--panel-2);
+  border:1px solid var(--line)}
+.progress li.done{background:var(--line-strong); border-color:var(--line-strong)}
+.progress li.now{background:var(--brand); border-color:#d9a512; height:.8rem}
+.progress-text{font-weight:700; font-size:.85rem; color:var(--muted); white-space:nowrap}
 
 /* ---- 主控区：一屏之内看清「现在在哪、能说什么、按哪里」 ---- */
-.stage{background:var(--panel); border:2px solid var(--line-strong); border-radius:var(--radius);
-  padding:1.25rem; margin-bottom:1.25rem}
-.stage-top{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.5rem}
+.stage{background:var(--card); border:2px solid var(--ink); border-radius:var(--radius);
+  padding:1.35rem 1.35rem 1.5rem; margin-bottom:1.25rem; box-shadow:var(--shadow)}
+.stage-top{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.35rem}
 .step-no{background:var(--ink); color:#fff; font-weight:700; font-size:.8rem;
-  padding:.2rem .6rem; border-radius:999px; letter-spacing:.06em}
-.step-name{font-size:1.35rem; font-weight:700; margin:0}
-.said{margin:.5rem 0 0; font-size:1.05rem; min-height:3.5rem}
-.said strong{background:#fff3b0; padding:0 .25rem; border-radius:3px}
+  padding:.25rem .7rem; border-radius:999px; letter-spacing:.06em}
+.step-name{font-size:1.5rem; font-weight:800; margin:0; letter-spacing:-.01em}
+.said{margin:.5rem 0 0; font-size:1.08rem; min-height:3.5rem}
+.said strong{background:#ffe680; padding:0 .25rem; border-radius:4px}
+
+/* 听到原文回显：让用户能立刻分辨「没听见」和「听错了」 */
+.heard{margin:1rem 0 0; padding:.7rem 1rem; border-radius:var(--radius-sm);
+  background:var(--panel); border:1px dashed var(--line-strong); font-size:.95rem}
+.heard .lbl{font-weight:700; color:var(--muted); font-size:.85rem; letter-spacing:.04em}
+.heard .val{font-weight:700}
+.heard.live .val{color:var(--muted); font-weight:600}
+.heard:empty{display:none}
+
 
 .btn{
   font:inherit; font-weight:700; cursor:pointer;
   min-height:3.25rem; padding:.7rem 1.25rem;
-  border-radius:var(--radius); border:2px solid var(--ink);
-  background:#fff; color:var(--ink);
+  border-radius:var(--radius-sm); border:2px solid var(--ink);
+  background:var(--card); color:var(--ink);
   display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  transition:background .12s ease, transform .12s ease;
 }
 .btn:hover{background:var(--panel-2)}
-.btn-primary{background:#141414; color:#fff; border-color:#141414}
-.btn-primary:hover{background:#333}
-.btn-accent{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
-.btn-accent:hover{background:#0a3279}
-.btn-live{background:var(--live); color:#fff; border-color:var(--live)}
-.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--ink); color:#fff; border-color:var(--ink)}
+.btn-primary:hover{background:#3a2f26}
+.btn-accent{background:var(--accent); color:var(--accent-ink); border-color:#6f0f0c}
+.btn-accent:hover{background:#8e1511}
+.btn-live{background:var(--live); color:#fff; border-color:#6f0f0c}
+.btn:disabled{opacity:.5; cursor:not-allowed}
 .btn-row{display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1rem}
 .btn-row .btn{flex:1 1 11rem}
 
-/* 麦克风大按钮：这个应用的主入口，单独做得又大又显眼 */
-.mic{width:100%; min-height:4.5rem; font-size:1.15rem}
-.mic[aria-pressed="true"]{background:var(--live); border-color:var(--live); color:#fff}
+/* ---- 麦克风：这个应用的主入口，做成又好按又明确的圆形按钮 ----
 
-.hint{margin:1rem 0 0; padding:.85rem 1rem; background:#fff; border:1px solid var(--line);
-  border-left:5px solid var(--accent); border-radius:0 var(--radius) var(--radius) 0; font-size:.95rem}
+   注意这条必须写在 .btn **之后**：两条选择器特异性相同（0,1,0），
+   谁在后面谁赢。第一版把它写在 .btn 前面，结果 border-radius:50%
+   被 .btn 的圆角盖掉，圆形按钮渲染成了圆角方块——截图一看才发现。
+   现在统一用 .btn.mic（0,2,0）把特异性也抬上去，位置和权重双保险。 */
+.mic-row{display:flex; justify-content:center; margin:1.6rem 0 .6rem}
+.btn.mic{width:9rem; height:9rem; min-height:0; padding:.6rem; border-radius:50%;
+  font-size:1.05rem; line-height:1.3; flex-direction:column; gap:.35rem;
+  background:var(--brand); color:var(--brand-ink); border:3px solid var(--ink);
+  box-shadow:var(--shadow)}
+/* 图标用内联 SVG 画，不用 emoji：emoji 在不同系统渲染差异大，
+   而且跟着字色走不了。这里让图标永远是墨色，按下时换白色。 */
+.btn.mic::before{content:""; width:2.7rem; height:2.7rem; flex:none;
+  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a1410' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='8' y1='23' x2='16' y2='23'/%3E%3C/svg%3E")}
+.btn.mic:hover{background:#ffd75e}
+.btn.mic[aria-pressed="true"]{background:var(--accent); color:#fff; border-color:#6f0f0c;
+  box-shadow:0 0 0 8px rgba(166,25,20,.18), var(--shadow)}
+.btn.mic[aria-pressed="true"]::before{
+  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='8' y1='23' x2='16' y2='23'/%3E%3C/svg%3E")}
+/* 正在听的时候给一圈缓慢外扩的呼吸环：不看屏幕也能从余光里知道它还开着。
+   动画是纯装饰性的，prefers-reduced-motion 下直接关掉。 */
+@keyframes micPulse{from{box-shadow:0 0 0 0 rgba(166,25,20,.30), var(--shadow)}
+                    to{box-shadow:0 0 0 16px rgba(166,25,20,0), var(--shadow)}}
+.btn.mic[aria-pressed="true"]{animation:micPulse 1.8s ease-out infinite}
+.mic-note{text-align:center; color:var(--muted); font-size:.9rem; margin:.25rem 0 0}
+
+.hint{margin:1.25rem 0 0; padding:.9rem 1.1rem; background:var(--panel);
+  border:1px solid var(--line); border-left:5px solid var(--brand);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:.95rem}
 .hint b{display:block; margin-bottom:.25rem}
-.chips{list-style:none; display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; padding:0}
-.chips li{background:#fff; border:1px solid var(--line-strong); border-radius:999px;
-  padding:.3rem .85rem; font-size:.9rem}
+.chips{list-style:none; display:flex; flex-wrap:wrap; gap:.5rem; margin:.6rem 0 0; padding:0}
+.chips li{background:var(--card); border:1px solid var(--line-strong); border-radius:999px;
+  padding:.35rem .9rem; font-size:.9rem}
 
-.grid{display:grid; gap:.75rem; grid-template-columns:1fr}
-@media (min-width:34rem){ .grid.two{grid-template-columns:1fr 1fr} }
+.grid{display:grid; gap:.9rem; grid-template-columns:1fr}
+@media (min-width:36rem){ .grid.two{grid-template-columns:1fr 1fr} }
 
-.card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:1rem}
-.card h3{margin-top:0; color:var(--ink); font-size:1rem}
-.card .num{font-size:1.5rem; font-weight:700; display:block; margin:.15rem 0}
-.card .sub{color:var(--muted); font-size:.85rem}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:1.15rem; box-shadow:var(--shadow)}
+.card h3{margin-top:0; color:var(--ink); font-size:1rem; color:var(--muted);
+  letter-spacing:.04em; font-size:.85rem; text-transform:uppercase}
+.card .num{font-size:1.9rem; font-weight:800; display:block; margin:.2rem 0; letter-spacing:-.02em}
+.card .sub{color:var(--muted); font-size:.88rem}
 
 ol.list, ul.list{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
 ol.list li, ul.list li{display:flex; gap:.75rem; align-items:baseline;
-  padding:.7rem .25rem; border-bottom:1px solid var(--line)}
+  padding:.75rem .25rem; border-bottom:1px solid var(--line)}
 ol.list li .idx{min-width:2rem; font-weight:700; color:var(--muted)}
 .grow{flex:1}
-.price{font-weight:700; white-space:nowrap}
-.tag{display:inline-block; font-size:.78rem; padding:.1rem .5rem; border-radius:999px;
+.price{font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums}
+.tag{display:inline-block; font-size:.78rem; padding:.12rem .55rem; border-radius:999px;
   border:1px solid var(--line-strong); color:var(--muted); margin-left:.4rem; white-space:nowrap}
-.tag-on{background:#e8f2e8; border-color:var(--ok); color:var(--ok)}
+.tag-on{background:#e8f4ea; border-color:var(--ok); color:var(--ok)}
 
-.empty{color:var(--muted); padding:.75rem .25rem}
+.empty{color:var(--muted); padding:.85rem .25rem}
 
 /* 打字兜底：语音不可用或环境嘈杂时必须还能用 */
 .field{display:block; margin-top:1rem}
 .field span{display:block; font-weight:700; margin-bottom:.35rem}
 input[type=text], input[type=password], input[type=search]{
-  font:inherit; width:100%; padding:.7rem .85rem; border:2px solid var(--line-strong);
-  border-radius:var(--radius); background:#fff; color:var(--ink); min-height:3.25rem}
-label.check{display:flex; gap:.7rem; align-items:flex-start; padding:.6rem 0; cursor:pointer}
+  font:inherit; width:100%; padding:.7rem .9rem; border:2px solid var(--line-strong);
+  border-radius:var(--radius-sm); background:var(--card); color:var(--ink); min-height:3.25rem}
+label.check{display:flex; gap:.7rem; align-items:flex-start; padding:.7rem 0; cursor:pointer}
 label.check input{width:1.6rem; height:1.6rem; margin:.2rem 0 0; flex:none}
+/* 开关和滑杆默认用浏览器自己的蓝色（Chrome 是 #0075ff），和整页的暖色调完全打架。
+   accent-color 一行就把它们统一到品牌的行动色上；深红够深，白字勾在里面的对比也够。 */
+label.check input, input[type=range]{accent-color:var(--accent)}
 .range-row{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap}
 input[type=range]{flex:1 1 12rem; min-height:3rem}
 
@@ -130,32 +199,35 @@ input[type=range]{flex:1 1 12rem; min-height:3rem}
 
 table{width:100%; border-collapse:collapse; font-size:.92rem}
 caption{text-align:left; color:var(--muted); padding-bottom:.5rem}
-th,td{text-align:left; padding:.55rem .5rem; border-bottom:1px solid var(--line)}
+th,td{text-align:left; padding:.6rem .5rem; border-bottom:1px solid var(--line)}
 th{font-size:.85rem; color:var(--muted); font-weight:700}
 
-details{border:1px solid var(--line); border-radius:var(--radius); padding:.75rem 1rem; background:#fff}
+details{border:1px solid var(--line); border-radius:var(--radius); padding:.85rem 1.1rem;
+  background:var(--card); box-shadow:var(--shadow)}
 details+details{margin-top:.75rem}
 summary{font-weight:700; cursor:pointer; padding:.35rem 0}
-summary:focus-visible{outline:3px solid #fff; box-shadow:0 0 0 6px #111}
+summary:focus-visible{outline:3px solid #fff; box-shadow:0 0 0 6px #1a1410}
 
 code, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em}
-pre{margin:.75rem 0 0; padding:.85rem; background:var(--panel-2); border-radius:var(--radius);
+pre{margin:.75rem 0 0; padding:.9rem; background:var(--panel-2); border-radius:var(--radius-sm);
   overflow-x:auto; font-size:.85rem; line-height:1.6}
 
-footer.site{margin-top:3rem; padding-top:1.25rem; border-top:3px solid var(--ink);
-  font-size:.85rem; color:var(--muted)}
-footer.site p{margin:.4rem 0}
+footer.site{margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line);
+  font-size:.88rem; color:var(--muted)}
+footer.site p{margin:.45rem 0}
 
 .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
   clip:rect(0 0 0 0); white-space:nowrap; border:0}
 
-/* 高对比偏好：系统的「增强对比」开关打开时，把次要色也压到纯黑 */
+/* 高对比偏好：系统的「增强对比」开关打开时，把次要色也压到纯黑、去掉柔和阴影 */
 @media (prefers-contrast:more){
-  :root{--muted:#111111; --line:#111111; --line-strong:#111111; --panel:#ffffff; --panel-2:#ffffff}
-  .card,.stage,.hint,details{border-width:3px}
+  :root{--muted:#1a1410; --line:#1a1410; --line-strong:#1a1410;
+        --panel:#ffffff; --panel-2:#ffffff; --card:#ffffff}
+  .card,.stage,.hint,details{border-width:3px; box-shadow:none}
+  .brand .mark{border-width:3px}
 }
 /* 减少动画偏好：本页本来就没有动画，这里显式声明一下，避免以后加东西忘了 */
-@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} html{scroll-behavior:auto} }
 @media print{ .btn,.mic{display:none} }
 </style>
 </head>
@@ -164,7 +236,10 @@ footer.site p{margin:.4rem 0}
 
 <div class="wrap">
 <header class="site">
-  <p class="brand"><b>麦声 · McVoice</b><span>VOICE ORDERING</span></p>
+  <p class="brand">
+    <span class="mark" aria-hidden="true">麦</span>
+    <b>麦声 · McVoice</b><span>VOICE ORDERING</span>
+  </p>
   <h1>用说的，点麦当劳</h1>
   <p class="lede">这份页面为视障用户设计：全程可以不看屏幕，用语音完成「选门店 → 点餐 → 确认 → 算价 → 下单」。
   也可以完全用键盘操作。所有门店、菜单与价格都来自麦当劳 MCP 的真实返回。</p>
@@ -176,27 +251,34 @@ footer.site p{margin:.4rem 0}
   <section aria-labelledby="h-stage" id="sec-stage">
     <h2 id="h-stage" class="sr-only">当前步骤与语音控制</h2>
 
+    <!-- 进度条纯装饰：准确的步骤信息由下面的 stepNo/stepName 与播报负责，
+         所以这里 aria-hidden，避免屏幕阅读器把同一件事读两遍。 -->
+    <div class="progress-wrap" aria-hidden="true">
+      <ol class="progress" id="progress"></ol>
+      <span class="progress-text mono" id="progressText">0 / 8</span>
+    </div>
+
     <div class="stage">
       <div class="stage-top">
         <span class="step-no" id="stepNo">STEP 1</span>
         <p class="step-name" id="stepName">准备开始</p>
       </div>
       <p class="said" id="said">按下面的按钮或按回车键开始。开始之后，我会把每一步都念出来。</p>
+
+      <!-- 听到原文：把「语音识别听到了什么」如实回显。
+           这一条是「识别不准」时用户唯一的抓手——分不清「没听见」和「听错了」，
+           就无从决定是重说一遍还是换个说法。 -->
+      <p class="heard" id="heard" hidden><span class="lbl" id="heardLbl">听到原文</span>　<span class="val" id="heardVal"></span></p>
     </div>
 
     <!-- 状态播报区：屏幕阅读器靠它跟上流程；aria-atomic 保证整句重读而不是只读变化部分 -->
     <p id="live" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></p>
     <p id="alert" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></p>
 
-    <div class="btn-row">
-      <button type="button" class="btn btn-primary mic" id="micBtn" aria-pressed="false">开始使用</button>
+    <div class="mic-row">
+      <button type="button" class="btn mic" id="micBtn" aria-pressed="false">开始使用</button>
     </div>
-
-    <div class="hint">
-      <b>这个按钮是总开关</b>
-      第一次按它会开启语音播报并进入点餐流程；之后按它可以随时「开始说话 / 停止说话」。
-      说话时按钮会变成红色。听不清就按「再说一遍」，说错了就按「退回上一步」。
-    </div>
+    <p class="mic-note" id="micNote">按一下开始，之后随时可以按它开关说话</p>
 
     <div class="btn-row">
       <button type="button" class="btn" id="repeatBtn">再说一遍</button>
@@ -304,9 +386,13 @@ const LIVE = (() => {
 })();
 const LOCAL = window.__LOCAL__ || null;   // 只有 serve.py 会注入它
 
-let DATA = (LIVE && LIVE.menu) || {"source":{"storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","address":"高新区天府三街218号峰汇中心二号楼一层","distance":671,"orderType":1,"beType":1,"tools":["query-nearby-stores","query-meals"],"capturedAt":"2026-10-15","note":"演示快照：菜单与价格来自上面的门店在采样时刻的真实返回。演示模式下小计按菜单现价相加，未调 calculate-price，因此不含优惠与打包费。"},"stores":[{"storeCode":"3450034001","storeName":"成都天府三街地铁站快捷小站","address":"成都天府三街地铁站内","distance":80,"businessStatus":false,"businessStartTime":"08:00","businessEndTime":"22:00","reservation":true},{"storeCode":"3450342","storeName":"麦当劳成都高新大源东天府三街新希望国际B座餐厅","address":"高新区天府三街69号新希望国际B座","distance":260,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"23:00","reservation":true},{"storeCode":"3450034","storeName":"麦当劳成都软件园得来速餐厅","address":"软件园B区天华二路218号","distance":389,"businessStatus":true,"businessStartTime":"00:00","businessEndTime":"23:59","reservation":true},{"storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","address":"高新区天府三街218号峰汇中心二号楼一层","distance":671,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"01:00","reservation":true},{"storeCode":"3450214","storeName":"麦当劳成都天府大道中段餐厅","address":"高新区天府大道中段396号地下一层5号商铺","distance":971,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"23:00","reservation":true}],"categories":[{"name":"人气热卖","meals":["9900016076","9900016075","9900016073","9900016077","521955","9900016311","9900004064","521950","515946"]},{"name":"精选单人餐","meals":["9900004064","9900004236","9900010110","9900006957"]},{"name":"鸡肉汉堡/卷","meals":["9900016075","9900016073","521953","521952","9900015850","521900","9900016310","9900016309","9900000891","9900000890","9900005462","9900005453","9900003537","1440","1406","1450","9900008746"]},{"name":"小食拼盘/多人餐","meals":["9900016076","9900006332","9900015730","9900011056","9900005321"]},{"name":"蘸酱炸鸡","meals":["9900016078","9900015729","521966","521799","521797"]},{"name":"随心配1+1","meals":["9900013304","9900015568"]},{"name":"巨无霸牛鱼肉堡","meals":["9900000888","9900000886","9900000885","9900000893","9900005411","9900005466","9900005468","9900005413","9900005460","9900005464","9900005449","1100","9900003586","1600","4648","1106","1120","521316","9900008747"]},{"name":"安格斯MAX厚牛堡","meals":["9900000881","9900000882","9900005428","9900005430","511781","511782"]},{"name":"炸鸡","meals":["521966","521797","521799","521881","9900005451","9900004835","1700","520445","1401","521156","9900005432"]},{"name":"大堡口福单人餐","meals":["9900015602"]},{"name":"小食甜品/其他","meals":["521955","521986","9900016082","521950","521951","521929","521946","521906","521914","521901","521917","521922","521743","4810","4437","6102","9900008754","9900008745","515837","9900008752"]},{"name":"开心乐园","meals":["9900016057","9900016058","9900016056","9900016055","506189"]},{"name":"麦咖啡™","meals":["515946","515955","507411","507409","510479","507387","514851","520689","515949","507394","510488"]},{"name":"500大卡套餐","meals":["9900011128","9900011121","9900011126","9900011123","9900009245","9900009242"]},{"name":"饮品","meals":["9900015852","521817","9900008751","3010","515520","515280","3755","6362","3757","9900003538","520689","3505"]}],"items":[{"code":"9900016076","name":"“我就喜欢”鸡薯双全盒","category":"人气热卖","price":15.9,"originalPrice":29.5,"discountType":null,"canWithOrder":false},{"code":"9900016075","name":"龙焰芝士棒鸡腿堡三件套","category":"人气热卖","price":29.9,"originalPrice":51.5,"discountType":null,"canWithOrder":false},{"code":"9900016073","name":"龙焰鸡腿堡三件套","category":"人气热卖","price":26.9,"originalPrice":48.5,"discountType":null,"canWithOrder":false},{"code":"9900016077","name":"蘸酱炸鸡","category":"人气热卖","price":11.9,"originalPrice":17.0,"discountType":null,"canWithOrder":false},{"code":"521955","name":"麦当劳联名徽章","category":"人气热卖","price":34.9,"originalPrice":39.9,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016311","name":"龙焰美味四件套","category":"人气热卖","price":29.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900004064","name":"精选单人餐三件套","category":"人气热卖","price":34.5,"originalPrice":47.0,"discountType":null,"canWithOrder":false},{"code":"521950","name":"蓝莓爆爆珠麦旋风","category":"人气热卖","price":16.5,"originalPrice":16.5,"discountType":null,"canWithOrder":false},{"code":"515946","name":"浓浓黑巧（冰/热）","category":"人气热卖","price":13.9,"originalPrice":21.0,"discountType":"促销优惠","canWithOrder":false},{"code":"9900004236","name":"人气超值四件套随心选","category":"精选单人餐","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900010110","name":"鱼牛汉堡四件套随心选","category":"精选单人餐","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900006957","name":"安格斯厚牛堡四件套随心选","category":"精选单人餐","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"521953","name":"龙焰芝士棒鸡腿堡","category":"鸡肉汉堡/卷","price":27.0,"originalPrice":27.0,"discountType":null,"canWithOrder":false},{"code":"521952","name":"龙焰鸡腿堡","category":"鸡肉汉堡/卷","price":24.0,"originalPrice":24.0,"discountType":null,"canWithOrder":false},{"code":"9900015850","name":"咸蛋黄鸡腿蛋月堡三件套","category":"鸡肉汉堡/卷","price":26.9,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"521900","name":"咸蛋黄鸡腿蛋月堡","category":"鸡肉汉堡/卷","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"9900016310","name":"龙焰芝士棒鸡腿堡四件套","category":"鸡肉汉堡/卷","price":32.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016309","name":"龙焰鸡腿堡四件套","category":"鸡肉汉堡/卷","price":29.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000891","name":"麦辣鸡腿堡四件套","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000890","name":"板烧鸡腿堡四件套","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005462","name":"板烧鸡腿堡三件套","category":"鸡肉汉堡/卷","price":34.5,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"9900005453","name":"麦香鸡套餐","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":41.5,"discountType":null,"canWithOrder":false},{"code":"9900003537","name":"学生专享汉堡小食随心选","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":28.0,"discountType":null,"canWithOrder":false},{"code":"1440","name":"麦辣鸡腿汉堡","category":"鸡肉汉堡/卷","price":22.5,"originalPrice":22.5,"discountType":null,"canWithOrder":false},{"code":"1406","name":"板烧鸡腿堡","category":"鸡肉汉堡/卷","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"1450","name":"麦香鸡","category":"鸡肉汉堡/卷","price":17.0,"originalPrice":17.0,"discountType":null,"canWithOrder":false},{"code":"9900008746","name":"鸡肉堡单品精选","category":"鸡肉汉堡/卷","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"9900006332","name":"薄皮V翅双拼十翅","category":"小食拼盘/多人餐","price":49.9,"originalPrice":77.0,"discountType":null,"canWithOrder":false},{"code":"9900015730","name":"BFF四宫格小食盘","category":"小食拼盘/多人餐","price":39.8,"originalPrice":54.0,"discountType":null,"canWithOrder":false},{"code":"9900011056","name":"全明星双人分享餐八件套","category":"小食拼盘/多人餐","price":49.9,"originalPrice":117.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005321","name":"BFF四宫格小食盘双人餐","category":"小食拼盘/多人餐","price":62.9,"originalPrice":123.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016078","name":"蘸酱麦麦脆汁鸡","category":"蘸酱炸鸡","price":11.9,"originalPrice":18.0,"discountType":null,"canWithOrder":false},{"code":"9900015729","name":"蘸酱BFF四宫格小食盘","category":"蘸酱炸鸡","price":42.8,"originalPrice":57.0,"discountType":null,"canWithOrder":false},{"code":"521966","name":"韩式烟熏芝士风味酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"521799","name":"日式鲜磨山葵酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"521797","name":"北美招牌牧场酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"9900013304","name":"人气经典随心配","category":"随心配1+1","price":14.9,"originalPrice":14.9,"discountType":null,"canWithOrder":false},{"code":"9900015568","name":"精选超值随心配","category":"随心配1+1","price":13.9,"originalPrice":13.9,"discountType":null,"canWithOrder":false},{"code":"9900000888","name":"巨无霸四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000886","name":"不素之霸双层牛堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000885","name":"培根蔬萃双层牛堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000893","name":"双层深海鳕鱼堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005411","name":"不素之霸双层牛堡三件套","category":"巨无霸牛鱼肉堡","price":38.0,"originalPrice":51.5,"discountType":null,"canWithOrder":false},{"code":"9900005466","name":"巨无霸三件套","category":"巨无霸牛鱼肉堡","price":37.0,"originalPrice":50.5,"discountType":null,"canWithOrder":false},{"code":"9900005468","name":"培根蔬萃双层牛堡三件套","category":"巨无霸牛鱼肉堡","price":36.0,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"9900005413","name":"双层深海鳕鱼堡三件套","category":"巨无霸牛鱼肉堡","price":36.0,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"9900005460","name":"麦香鱼套餐","category":"巨无霸牛鱼肉堡","price":34.0,"originalPrice":47.5,"discountType":null,"canWithOrder":false},{"code":"9900005464","name":"双层吉士汉堡套餐","category":"巨无霸牛鱼肉堡","price":34.0,"originalPrice":47.5,"discountType":null,"canWithOrder":false},{"code":"9900005449","name":"吉士汉堡包套餐","category":"巨无霸牛鱼肉堡","price":26.5,"originalPrice":40.0,"discountType":null,"canWithOrder":false},{"code":"1100","name":"巨无霸","category":"巨无霸牛鱼肉堡","price":26.0,"originalPrice":26.0,"discountType":null,"canWithOrder":false},{"code":"9900003586","name":"双层深海鳕鱼堡","category":"巨无霸牛鱼肉堡","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"1600","name":"麦香鱼","category":"巨无霸牛鱼肉堡","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"4648","name":"不素之霸双层牛堡","category":"巨无霸牛鱼肉堡","price":27.0,"originalPrice":27.0,"discountType":null,"canWithOrder":false},{"code":"1106","name":"培根蔬萃双层牛堡","category":"巨无霸牛鱼肉堡","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"1120","name":"双层吉士汉堡","category":"巨无霸牛鱼肉堡","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"521316","name":"高达吉士双牛堡","category":"巨无霸牛鱼肉堡","price":22.5,"originalPrice":22.5,"discountType":null,"canWithOrder":false},{"code":"9900008747","name":"牛肉堡单品精选","category":"巨无霸牛鱼肉堡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"9900000881","name":"培根安格斯厚牛堡四件套","category":"安格斯MAX厚牛堡","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000882","name":"芝士安格斯厚牛堡四件套","category":"安格斯MAX厚牛堡","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005428","name":"培根安格斯厚牛堡三件套","category":"安格斯MAX厚牛堡","price":45.5,"originalPrice":59.0,"discountType":null,"canWithOrder":false},{"code":"9900005430","name":"芝士安格斯厚牛堡三件套","category":"安格斯MAX厚牛堡","price":42.5,"originalPrice":56.0,"discountType":null,"canWithOrder":false},{"code":"511781","name":"培根安格斯厚牛堡","category":"安格斯MAX厚牛堡","price":34.5,"originalPrice":34.5,"discountType":null,"canWithOrder":false},{"code":"511782","name":"芝士安格斯厚牛堡","category":"安格斯MAX厚牛堡","price":31.5,"originalPrice":31.5,"discountType":null,"canWithOrder":false},{"code":"521881","name":"马来咖喱风味薄皮肉骨鸡3块","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"9900005451","name":"麦辣鸡翅4块套餐","category":"炸鸡","price":36.5,"originalPrice":50.0,"discountType":null,"canWithOrder":false},{"code":"9900004835","name":"麦乐鸡套餐","category":"炸鸡","price":25.0,"originalPrice":38.5,"discountType":null,"canWithOrder":false},{"code":"1700","name":"麦辣鸡翅","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"520445","name":"薄皮焦香V翅","category":"炸鸡","price":16.0,"originalPrice":16.0,"discountType":null,"canWithOrder":false},{"code":"1401","name":"麦乐鸡","category":"炸鸡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"521156","name":"那么大鸡排（椒盐风味）","category":"炸鸡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"9900005432","name":"麦麦脆汁鸡1块","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"9900015602","name":"大堡口福三件套","category":"大堡口福单人餐","price":22.9,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"521986","name":"马苏里拉拉丝芝士条","category":"小食甜品/其他","price":11.0,"originalPrice":16.0,"discountType":"促销优惠","canWithOrder":false},{"code":"9900016082","name":"心形薯饼5块","category":"小食甜品/其他","price":15.5,"originalPrice":15.5,"discountType":null,"canWithOrder":false},{"code":"521951","name":"灰焰圆筒","category":"小食甜品/其他","price":5.0,"originalPrice":5.0,"discountType":null,"canWithOrder":false},{"code":"521929","name":"旋旋水手帽","category":"小食甜品/其他","price":48.8,"originalPrice":48.8,"discountType":null,"canWithOrder":false},{"code":"521946","name":"旋旋星愿贴","category":"小食甜品/其他","price":3.9,"originalPrice":3.9,"discountType":null,"canWithOrder":false},{"code":"521906","name":"玫瑰红糖糍粑风味派","category":"小食甜品/其他","price":5.0,"originalPrice":9.5,"discountType":"促销优惠","canWithOrder":false},{"code":"521914","name":"“葱不求人“按摩捶痒痒挠","category":"小食甜品/其他","price":14.9,"originalPrice":14.9,"discountType":null,"canWithOrder":false},{"code":"521901","name":"月下相思扭扭薯","category":"小食甜品/其他","price":16.0,"originalPrice":16.0,"discountType":null,"canWithOrder":false},{"code":"521917","name":"泷愿成真麦旋风——大米风味","category":"小食甜品/其他","price":16.5,"originalPrice":16.5,"discountType":null,"canWithOrder":false},{"code":"521922","name":"奶香大米派","category":"小食甜品/其他","price":9.0,"originalPrice":9.0,"discountType":null,"canWithOrder":false},{"code":"521743","name":"薯条脆卜卜毛绒周边","category":"小食甜品/其他","price":24.9,"originalPrice":29.9,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"4810","name":"薯条","category":"小食甜品/其他","price":14.5,"originalPrice":14.5,"discountType":null,"canWithOrder":false},{"code":"4437","name":"玉米杯","category":"小食甜品/其他","price":13.0,"originalPrice":13.0,"discountType":null,"canWithOrder":false},{"code":"6102","name":"苹果片","category":"小食甜品/其他","price":7.0,"originalPrice":7.0,"discountType":null,"canWithOrder":false},{"code":"9900008754","name":"经典麦旋风","category":"小食甜品/其他","price":15.5,"originalPrice":15.5,"discountType":null,"canWithOrder":false},{"code":"9900008745","name":"新地","category":"小食甜品/其他","price":12.5,"originalPrice":12.5,"discountType":null,"canWithOrder":false},{"code":"515837","name":"圆筒冰淇淋","category":"小食甜品/其他","price":5.0,"originalPrice":5.0,"discountType":null,"canWithOrder":false},{"code":"9900008752","name":"派","category":"小食甜品/其他","price":8.0,"originalPrice":8.0,"discountType":null,"canWithOrder":false},{"code":"9900016057","name":"汉堡开心乐园餐","category":"开心乐园","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"9900016058","name":"鱼排堡开心乐园餐","category":"开心乐园","price":24.0,"originalPrice":24.0,"discountType":null,"canWithOrder":false},{"code":"9900016056","name":"麦乐鸡开心乐园餐","category":"开心乐园","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"9900016055","name":"开心亲子双人餐","category":"开心乐园","price":59.5,"originalPrice":59.5,"discountType":null,"canWithOrder":false},{"code":"506189","name":"如意百宝袋","category":"开心乐园","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"515955","name":"浓浓燕麦黑巧（冰/热）","category":"麦咖啡™","price":15.9,"originalPrice":23.0,"discountType":"促销优惠","canWithOrder":false},{"code":"507411","name":"麦咖啡™美式","category":"麦咖啡™","price":11.9,"originalPrice":19.0,"discountType":"促销优惠","canWithOrder":false},{"code":"507409","name":"麦咖啡™奶铁","category":"麦咖啡™","price":13.9,"originalPrice":21.0,"discountType":"促销优惠","canWithOrder":false},{"code":"510479","name":"燕麦奶铁","category":"麦咖啡™","price":9.9,"originalPrice":23.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"507387","name":"卡布奇诺","category":"麦咖啡™","price":21.0,"originalPrice":21.0,"discountType":null,"canWithOrder":false},{"code":"514851","name":"咖啡阿芙佳朵","category":"麦咖啡™","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"520689","name":"鲜萃咖啡","category":"麦咖啡™","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"515949","name":"浓浓黑巧雪冰","category":"麦咖啡™","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"507394","name":"牛奶","category":"麦咖啡™","price":19.0,"originalPrice":19.0,"discountType":null,"canWithOrder":false},{"code":"510488","name":"燕麦奶","category":"麦咖啡™","price":21.0,"originalPrice":21.0,"discountType":null,"canWithOrder":false},{"code":"9900011128","name":"“堡”你欢乐套餐","category":"500大卡套餐","price":28.0,"originalPrice":42.5,"discountType":null,"canWithOrder":false},{"code":"9900011121","name":"“苹”水相“鱼”套餐","category":"500大卡套餐","price":36.0,"originalPrice":54.5,"discountType":null,"canWithOrder":false},{"code":"9900011126","name":"酥脆无双套餐","category":"500大卡套餐","price":20.5,"originalPrice":20.5,"discountType":null,"canWithOrder":false},{"code":"9900011123","name":"“辣”么快乐套餐","category":"500大卡套餐","price":24.0,"originalPrice":36.5,"discountType":null,"canWithOrder":false},{"code":"9900009245","name":"牛气满满套餐","category":"500大卡套餐","price":34.5,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"9900009242","name":"“苹板”支撑Pro套餐","category":"500大卡套餐","price":39.5,"originalPrice":53.5,"discountType":null,"canWithOrder":false},{"code":"9900015852","name":"举杯邀月柚桂茶","category":"饮品","price":13.0,"originalPrice":13.0,"discountType":null,"canWithOrder":false},{"code":"521817","name":"【美汁源】“多汁柠柠”","category":"饮品","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"9900008751","name":"可乐","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"3010","name":"雪碧","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"515520","name":"怡泉+C","category":"饮品","price":11.5,"originalPrice":11.5,"discountType":null,"canWithOrder":false},{"code":"515280","name":"阳光柠檬红茶","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"3755","name":"纯牛奶(盒装)","category":"饮品","price":11.0,"originalPrice":11.0,"discountType":null,"canWithOrder":false},{"code":"6362","name":"100% 苹果汁(盒装)","category":"饮品","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"3757","name":"纯悦","category":"饮品","price":7.5,"originalPrice":7.5,"discountType":null,"canWithOrder":false},{"code":"9900003538","name":"学生专享饮品随心选","category":"饮品","price":10.0,"originalPrice":10.0,"discountType":null,"canWithOrder":false},{"code":"3505","name":"锡兰红茶","category":"饮品","price":11.5,"originalPrice":11.5,"discountType":null,"canWithOrder":false}],"aliases":{"巨无霸":["1100","9900005466","9900000888"],"big mac":["1100","9900005466","9900000888"],"双吉":["1120","9900005464"],"双层吉士":["1120","9900005464"],"吉士汉堡":["1120","9900005464","9900005449"],"芝士汉堡":["1120","9900005464"],"板烧":["1406","9900005462","9900000890"],"板烧鸡腿":["1406","9900005462","9900000890"],"麦辣鸡腿堡":["1440","9900000891"],"麦辣鸡腿":["1440","9900000891"],"麦香鸡":["1450","9900005453"],"麦香鱼":["1600","9900005460"],"鳕鱼堡":["9900003586","9900005413","9900000893"],"深海鳕鱼堡":["9900003586","9900005413","9900000893"],"不素之霸":["4648","9900000886","9900005411"],"安格斯":["511781","511782","9900000881","9900000882","9900005428","9900005430"],"厚牛堡":["511781","511782","9900000881","9900000882","9900006957"],"培根蔬萃":["1106","9900005468","9900000885"],"高达吉士":["521316"],"龙焰鸡腿堡":["521952","9900016073","9900016309"],"龙焰芝士棒鸡腿堡":["521953","9900016075","9900016310"],"咸蛋黄鸡腿蛋月堡":["521900","9900015850"],"鸡腿堡":["521952","1406","9900016073","9900016075"],"麦辣鸡翅":["1700","9900005451"],"鸡翅":["1700","9900005451"],"麦乐鸡":["1401","9900004835"],"鸡块":["1401","9900004835"],"那么大鸡排":["521156"],"鸡排":["521156"],"薄皮焦香v翅":["520445"],"v翅":["520445","9900006332"],"脆汁鸡":["9900005432","9900016078"],"薯条":["4810"],"中薯条":["4810"],"大薯条":["4810"],"玉米杯":["4437"],"玉米":["4437"],"苹果片":["6102"],"拉丝芝士条":["521986"],"芝士条":["521986"],"鸡薯双全盒":["9900016076"],"扭扭薯":["521901"],"薯饼":["9900016082"],"可乐":["9900008751"],"雪碧":["3010"],"芬达":["3010"],"柠檬红茶":["515280"],"红茶":["515280","3505"],"锡兰红茶":["3505"],"纯悦":["3757"],"矿泉水":["3757"],"水":["3757"],"牛奶":["3755","507394"],"纯牛奶":["3755"],"燕麦奶":["510488"],"苹果汁":["6362"],"果汁":["6362"],"咖啡":["520689","507411","507387","514851"],"美式":["507411"],"卡布奇诺":["507387"],"鲜萃咖啡":["520689"],"奶铁":["507409","510479"],"黑巧":["515946","515955"],"柚桂茶":["9900015852"],"圆筒":["515837"],"甜筒":["515837"],"冰淇淋":["515837","9900008745","9900008754"],"新地":["9900008745"],"麦旋风":["9900008754","521950","521917"],"派":["9900008752","521906","521922"],"糍粑派":["521906"],"大米派":["521922"],"蘸酱":["521966","521797","521799"],"牧场酱":["521797"],"山葵酱":["521799"],"芝士酱":["521966"],"随心配":["9900013304","9900015568"],"1+1":["9900013304","9900015568"],"大堡口福":["9900015602"],"开心乐园餐":["9900016057","9900016056","9900016058"],"儿童餐":["9900016057","9900016056","9900016058"],"亲子双人餐":["9900016055"],"四宫格":["9900015730","9900015729","9900005321"],"小食拼盘":["9900015730","9900015729","9900006332"],"双拼十翅":["9900006332"],"四件套随心选":["9900004236","9900010110","9900006957"]},"homophones":{"巨无八":"巨无霸","巨无吧":"巨无霸","巨无爸":"巨无霸","聚无霸":"巨无霸","麦辣鸡翅":"麦辣鸡翅","麦拉鸡翅":"麦辣鸡翅","麦乐机":"麦乐鸡","麦勒鸡":"麦乐鸡","薯条二":"薯条","数条":"薯条","暑条":"薯条","可乐二":"可乐","卡了":"可乐","可了":"可乐","双极":"双吉","板骚":"板烧","麦香于":"麦香鱼","麦香雨":"麦香鱼","雪壁":"雪碧","雪比":"雪碧","圆桶":"圆筒","甜桶":"圆筒","安格丝":"安格斯","安格司":"安格斯","玉米杯二":"玉米杯","鸡块二":"鸡块","咖啡二":"咖啡"},"frequent":{"code":"9900015602","tags":["我的常点"]},"coupons":[{"name":"中薯条买一送一","price":13.5,"validFrom":"2026-10-12 10:30","validTo":"2026-10-16 23:59","weekdays":["周一","周二","周三","周四","周五"],"timeFrom":"10:30","timeTo":"23:59","tags":["到店专用","外送专用"]},{"name":"王牌小食拼","price":15.9,"validFrom":"2026-10-12 10:30","validTo":"2026-10-16 23:59","weekdays":["周一","周二","周三","周四","周五"],"timeFrom":"10:30","timeTo":"23:59","tags":["到店专用","外送专用"]},{"name":"火腿扒堡早餐两件套","price":9.9,"validFrom":"2026-10-16 05:00","validTo":"2026-10-16 10:29","weekdays":["周五"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"巧克力味厚松饼猪柳蛋套餐","price":29.9,"validFrom":"2026-10-17 05:00","validTo":"2026-10-17 10:29","weekdays":["周六"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"巧克力味厚松饼猪柳蛋套餐","price":29.9,"validFrom":"2026-10-18 05:00","validTo":"2026-10-18 10:29","weekdays":["周日"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"火腿扒堡早餐两件套","price":9.9,"validFrom":"2026-10-19 05:00","validTo":"2026-10-19 10:29","weekdays":["周一"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"芝香脆鸡扒堡早餐两件套","price":9.9,"validFrom":"2026-10-20 05:00","validTo":"2026-10-20 10:29","weekdays":["周二"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"高达芝士蛋堡早餐两件套","price":9.9,"validFrom":"2026-10-21 05:00","validTo":"2026-10-21 10:29","weekdays":["周三"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]}],"couponLimitation":"关键限制：query-my-coupons 与 available-coupons 的返回里都没有 couponId / couponCode，而 calculate-price 与 create-order 套券必须传这两个字段。也就是说，纯 MCP 链路目前拿不到可回填的券 ID。本项目因此只做到「语音播报有哪些券、什么时段能用」，不假装能自动套券。"};
+let DATA = (LIVE && LIVE.menu) || {"source":{"storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","address":"高新区天府三街218号峰汇中心二号楼一层","distance":671,"orderType":1,"beType":1,"tools":["query-nearby-stores","query-meals"],"capturedAt":"2026-10-15","note":"演示快照：菜单与价格来自上面的门店在采样时刻的真实返回。演示模式下小计按菜单现价相加，未调 calculate-price，因此不含优惠与打包费。"},"stores":[{"storeCode":"3450034001","storeName":"成都天府三街地铁站快捷小站","address":"成都天府三街地铁站内","distance":80,"businessStatus":false,"businessStartTime":"08:00","businessEndTime":"22:00","reservation":true},{"storeCode":"3450342","storeName":"麦当劳成都高新大源东天府三街新希望国际B座餐厅","address":"高新区天府三街69号新希望国际B座","distance":260,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"23:00","reservation":true},{"storeCode":"3450034","storeName":"麦当劳成都软件园得来速餐厅","address":"软件园B区天华二路218号","distance":389,"businessStatus":true,"businessStartTime":"00:00","businessEndTime":"23:59","reservation":true},{"storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","address":"高新区天府三街218号峰汇中心二号楼一层","distance":671,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"01:00","reservation":true},{"storeCode":"3450214","storeName":"麦当劳成都天府大道中段餐厅","address":"高新区天府大道中段396号地下一层5号商铺","distance":971,"businessStatus":true,"businessStartTime":"07:30","businessEndTime":"23:00","reservation":true}],"categories":[{"name":"人气热卖","meals":["9900016076","9900016075","9900016073","9900016077","521955","9900016311","9900004064","521950","515946"]},{"name":"精选单人餐","meals":["9900004064","9900004236","9900010110","9900006957"]},{"name":"鸡肉汉堡/卷","meals":["9900016075","9900016073","521953","521952","9900015850","521900","9900016310","9900016309","9900000891","9900000890","9900005462","9900005453","9900003537","1440","1406","1450","9900008746"]},{"name":"小食拼盘/多人餐","meals":["9900016076","9900006332","9900015730","9900011056","9900005321"]},{"name":"蘸酱炸鸡","meals":["9900016078","9900015729","521966","521799","521797"]},{"name":"随心配1+1","meals":["9900013304","9900015568"]},{"name":"巨无霸牛鱼肉堡","meals":["9900000888","9900000886","9900000885","9900000893","9900005411","9900005466","9900005468","9900005413","9900005460","9900005464","9900005449","1100","9900003586","1600","4648","1106","1120","521316","9900008747"]},{"name":"安格斯MAX厚牛堡","meals":["9900000881","9900000882","9900005428","9900005430","511781","511782"]},{"name":"炸鸡","meals":["521966","521797","521799","521881","9900005451","9900004835","1700","520445","1401","521156","9900005432"]},{"name":"大堡口福单人餐","meals":["9900015602"]},{"name":"小食甜品/其他","meals":["521955","521986","9900016082","521950","521951","521929","521946","521906","521914","521901","521917","521922","521743","4810","4437","6102","9900008754","9900008745","515837","9900008752"]},{"name":"开心乐园","meals":["9900016057","9900016058","9900016056","9900016055","506189"]},{"name":"麦咖啡™","meals":["515946","515955","507411","507409","510479","507387","514851","520689","515949","507394","510488"]},{"name":"500大卡套餐","meals":["9900011128","9900011121","9900011126","9900011123","9900009245","9900009242"]},{"name":"饮品","meals":["9900015852","521817","9900008751","3010","515520","515280","3755","6362","3757","9900003538","520689","3505"]}],"items":[{"code":"9900016076","name":"“我就喜欢”鸡薯双全盒","category":"人气热卖","price":15.9,"originalPrice":29.5,"discountType":null,"canWithOrder":false},{"code":"9900016075","name":"龙焰芝士棒鸡腿堡三件套","category":"人气热卖","price":29.9,"originalPrice":51.5,"discountType":null,"canWithOrder":false},{"code":"9900016073","name":"龙焰鸡腿堡三件套","category":"人气热卖","price":26.9,"originalPrice":48.5,"discountType":null,"canWithOrder":false},{"code":"9900016077","name":"蘸酱炸鸡","category":"人气热卖","price":11.9,"originalPrice":17.0,"discountType":null,"canWithOrder":false},{"code":"521955","name":"麦当劳联名徽章","category":"人气热卖","price":34.9,"originalPrice":39.9,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016311","name":"龙焰美味四件套","category":"人气热卖","price":29.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900004064","name":"精选单人餐三件套","category":"人气热卖","price":34.5,"originalPrice":47.0,"discountType":null,"canWithOrder":false},{"code":"521950","name":"蓝莓爆爆珠麦旋风","category":"人气热卖","price":16.5,"originalPrice":16.5,"discountType":null,"canWithOrder":false},{"code":"515946","name":"浓浓黑巧（冰/热）","category":"人气热卖","price":13.9,"originalPrice":21.0,"discountType":"促销优惠","canWithOrder":false},{"code":"9900004236","name":"人气超值四件套随心选","category":"精选单人餐","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900010110","name":"鱼牛汉堡四件套随心选","category":"精选单人餐","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900006957","name":"安格斯厚牛堡四件套随心选","category":"精选单人餐","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"521953","name":"龙焰芝士棒鸡腿堡","category":"鸡肉汉堡/卷","price":27.0,"originalPrice":27.0,"discountType":null,"canWithOrder":false},{"code":"521952","name":"龙焰鸡腿堡","category":"鸡肉汉堡/卷","price":24.0,"originalPrice":24.0,"discountType":null,"canWithOrder":false},{"code":"9900015850","name":"咸蛋黄鸡腿蛋月堡三件套","category":"鸡肉汉堡/卷","price":26.9,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"521900","name":"咸蛋黄鸡腿蛋月堡","category":"鸡肉汉堡/卷","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"9900016310","name":"龙焰芝士棒鸡腿堡四件套","category":"鸡肉汉堡/卷","price":32.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016309","name":"龙焰鸡腿堡四件套","category":"鸡肉汉堡/卷","price":29.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000891","name":"麦辣鸡腿堡四件套","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000890","name":"板烧鸡腿堡四件套","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":57.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005462","name":"板烧鸡腿堡三件套","category":"鸡肉汉堡/卷","price":34.5,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"9900005453","name":"麦香鸡套餐","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":41.5,"discountType":null,"canWithOrder":false},{"code":"9900003537","name":"学生专享汉堡小食随心选","category":"鸡肉汉堡/卷","price":28.0,"originalPrice":28.0,"discountType":null,"canWithOrder":false},{"code":"1440","name":"麦辣鸡腿汉堡","category":"鸡肉汉堡/卷","price":22.5,"originalPrice":22.5,"discountType":null,"canWithOrder":false},{"code":"1406","name":"板烧鸡腿堡","category":"鸡肉汉堡/卷","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"1450","name":"麦香鸡","category":"鸡肉汉堡/卷","price":17.0,"originalPrice":17.0,"discountType":null,"canWithOrder":false},{"code":"9900008746","name":"鸡肉堡单品精选","category":"鸡肉汉堡/卷","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"9900006332","name":"薄皮V翅双拼十翅","category":"小食拼盘/多人餐","price":49.9,"originalPrice":77.0,"discountType":null,"canWithOrder":false},{"code":"9900015730","name":"BFF四宫格小食盘","category":"小食拼盘/多人餐","price":39.8,"originalPrice":54.0,"discountType":null,"canWithOrder":false},{"code":"9900011056","name":"全明星双人分享餐八件套","category":"小食拼盘/多人餐","price":49.9,"originalPrice":117.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005321","name":"BFF四宫格小食盘双人餐","category":"小食拼盘/多人餐","price":62.9,"originalPrice":123.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900016078","name":"蘸酱麦麦脆汁鸡","category":"蘸酱炸鸡","price":11.9,"originalPrice":18.0,"discountType":null,"canWithOrder":false},{"code":"9900015729","name":"蘸酱BFF四宫格小食盘","category":"蘸酱炸鸡","price":42.8,"originalPrice":57.0,"discountType":null,"canWithOrder":false},{"code":"521966","name":"韩式烟熏芝士风味酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"521799","name":"日式鲜磨山葵酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"521797","name":"北美招牌牧场酱","category":"蘸酱炸鸡","price":3.0,"originalPrice":3.0,"discountType":null,"canWithOrder":false},{"code":"9900013304","name":"人气经典随心配","category":"随心配1+1","price":14.9,"originalPrice":14.9,"discountType":null,"canWithOrder":false},{"code":"9900015568","name":"精选超值随心配","category":"随心配1+1","price":13.9,"originalPrice":13.9,"discountType":null,"canWithOrder":false},{"code":"9900000888","name":"巨无霸四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000886","name":"不素之霸双层牛堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000885","name":"培根蔬萃双层牛堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000893","name":"双层深海鳕鱼堡四件套","category":"巨无霸牛鱼肉堡","price":32.0,"originalPrice":59.5,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005411","name":"不素之霸双层牛堡三件套","category":"巨无霸牛鱼肉堡","price":38.0,"originalPrice":51.5,"discountType":null,"canWithOrder":false},{"code":"9900005466","name":"巨无霸三件套","category":"巨无霸牛鱼肉堡","price":37.0,"originalPrice":50.5,"discountType":null,"canWithOrder":false},{"code":"9900005468","name":"培根蔬萃双层牛堡三件套","category":"巨无霸牛鱼肉堡","price":36.0,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"9900005413","name":"双层深海鳕鱼堡三件套","category":"巨无霸牛鱼肉堡","price":36.0,"originalPrice":49.5,"discountType":null,"canWithOrder":false},{"code":"9900005460","name":"麦香鱼套餐","category":"巨无霸牛鱼肉堡","price":34.0,"originalPrice":47.5,"discountType":null,"canWithOrder":false},{"code":"9900005464","name":"双层吉士汉堡套餐","category":"巨无霸牛鱼肉堡","price":34.0,"originalPrice":47.5,"discountType":null,"canWithOrder":false},{"code":"9900005449","name":"吉士汉堡包套餐","category":"巨无霸牛鱼肉堡","price":26.5,"originalPrice":40.0,"discountType":null,"canWithOrder":false},{"code":"1100","name":"巨无霸","category":"巨无霸牛鱼肉堡","price":26.0,"originalPrice":26.0,"discountType":null,"canWithOrder":false},{"code":"9900003586","name":"双层深海鳕鱼堡","category":"巨无霸牛鱼肉堡","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"1600","name":"麦香鱼","category":"巨无霸牛鱼肉堡","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"4648","name":"不素之霸双层牛堡","category":"巨无霸牛鱼肉堡","price":27.0,"originalPrice":27.0,"discountType":null,"canWithOrder":false},{"code":"1106","name":"培根蔬萃双层牛堡","category":"巨无霸牛鱼肉堡","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"1120","name":"双层吉士汉堡","category":"巨无霸牛鱼肉堡","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"521316","name":"高达吉士双牛堡","category":"巨无霸牛鱼肉堡","price":22.5,"originalPrice":22.5,"discountType":null,"canWithOrder":false},{"code":"9900008747","name":"牛肉堡单品精选","category":"巨无霸牛鱼肉堡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"9900000881","name":"培根安格斯厚牛堡四件套","category":"安格斯MAX厚牛堡","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900000882","name":"芝士安格斯厚牛堡四件套","category":"安格斯MAX厚牛堡","price":37.0,"originalPrice":66.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"9900005428","name":"培根安格斯厚牛堡三件套","category":"安格斯MAX厚牛堡","price":45.5,"originalPrice":59.0,"discountType":null,"canWithOrder":false},{"code":"9900005430","name":"芝士安格斯厚牛堡三件套","category":"安格斯MAX厚牛堡","price":42.5,"originalPrice":56.0,"discountType":null,"canWithOrder":false},{"code":"511781","name":"培根安格斯厚牛堡","category":"安格斯MAX厚牛堡","price":34.5,"originalPrice":34.5,"discountType":null,"canWithOrder":false},{"code":"511782","name":"芝士安格斯厚牛堡","category":"安格斯MAX厚牛堡","price":31.5,"originalPrice":31.5,"discountType":null,"canWithOrder":false},{"code":"521881","name":"马来咖喱风味薄皮肉骨鸡3块","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"9900005451","name":"麦辣鸡翅4块套餐","category":"炸鸡","price":36.5,"originalPrice":50.0,"discountType":null,"canWithOrder":false},{"code":"9900004835","name":"麦乐鸡套餐","category":"炸鸡","price":25.0,"originalPrice":38.5,"discountType":null,"canWithOrder":false},{"code":"1700","name":"麦辣鸡翅","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"520445","name":"薄皮焦香V翅","category":"炸鸡","price":16.0,"originalPrice":16.0,"discountType":null,"canWithOrder":false},{"code":"1401","name":"麦乐鸡","category":"炸鸡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"521156","name":"那么大鸡排（椒盐风味）","category":"炸鸡","price":14.0,"originalPrice":14.0,"discountType":null,"canWithOrder":false},{"code":"9900005432","name":"麦麦脆汁鸡1块","category":"炸鸡","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"9900015602","name":"大堡口福三件套","category":"大堡口福单人餐","price":22.9,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"521986","name":"马苏里拉拉丝芝士条","category":"小食甜品/其他","price":11.0,"originalPrice":16.0,"discountType":"促销优惠","canWithOrder":false},{"code":"9900016082","name":"心形薯饼5块","category":"小食甜品/其他","price":15.5,"originalPrice":15.5,"discountType":null,"canWithOrder":false},{"code":"521951","name":"灰焰圆筒","category":"小食甜品/其他","price":5.0,"originalPrice":5.0,"discountType":null,"canWithOrder":false},{"code":"521929","name":"旋旋水手帽","category":"小食甜品/其他","price":48.8,"originalPrice":48.8,"discountType":null,"canWithOrder":false},{"code":"521946","name":"旋旋星愿贴","category":"小食甜品/其他","price":3.9,"originalPrice":3.9,"discountType":null,"canWithOrder":false},{"code":"521906","name":"玫瑰红糖糍粑风味派","category":"小食甜品/其他","price":5.0,"originalPrice":9.5,"discountType":"促销优惠","canWithOrder":false},{"code":"521914","name":"“葱不求人“按摩捶痒痒挠","category":"小食甜品/其他","price":14.9,"originalPrice":14.9,"discountType":null,"canWithOrder":false},{"code":"521901","name":"月下相思扭扭薯","category":"小食甜品/其他","price":16.0,"originalPrice":16.0,"discountType":null,"canWithOrder":false},{"code":"521917","name":"泷愿成真麦旋风——大米风味","category":"小食甜品/其他","price":16.5,"originalPrice":16.5,"discountType":null,"canWithOrder":false},{"code":"521922","name":"奶香大米派","category":"小食甜品/其他","price":9.0,"originalPrice":9.0,"discountType":null,"canWithOrder":false},{"code":"521743","name":"薯条脆卜卜毛绒周边","category":"小食甜品/其他","price":24.9,"originalPrice":29.9,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"4810","name":"薯条","category":"小食甜品/其他","price":14.5,"originalPrice":14.5,"discountType":null,"canWithOrder":false},{"code":"4437","name":"玉米杯","category":"小食甜品/其他","price":13.0,"originalPrice":13.0,"discountType":null,"canWithOrder":false},{"code":"6102","name":"苹果片","category":"小食甜品/其他","price":7.0,"originalPrice":7.0,"discountType":null,"canWithOrder":false},{"code":"9900008754","name":"经典麦旋风","category":"小食甜品/其他","price":15.5,"originalPrice":15.5,"discountType":null,"canWithOrder":false},{"code":"9900008745","name":"新地","category":"小食甜品/其他","price":12.5,"originalPrice":12.5,"discountType":null,"canWithOrder":false},{"code":"515837","name":"圆筒冰淇淋","category":"小食甜品/其他","price":5.0,"originalPrice":5.0,"discountType":null,"canWithOrder":false},{"code":"9900008752","name":"派","category":"小食甜品/其他","price":8.0,"originalPrice":8.0,"discountType":null,"canWithOrder":false},{"code":"9900016057","name":"汉堡开心乐园餐","category":"开心乐园","price":23.5,"originalPrice":23.5,"discountType":null,"canWithOrder":false},{"code":"9900016058","name":"鱼排堡开心乐园餐","category":"开心乐园","price":24.0,"originalPrice":24.0,"discountType":null,"canWithOrder":false},{"code":"9900016056","name":"麦乐鸡开心乐园餐","category":"开心乐园","price":25.0,"originalPrice":25.0,"discountType":null,"canWithOrder":false},{"code":"9900016055","name":"开心亲子双人餐","category":"开心乐园","price":59.5,"originalPrice":59.5,"discountType":null,"canWithOrder":false},{"code":"506189","name":"如意百宝袋","category":"开心乐园","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"515955","name":"浓浓燕麦黑巧（冰/热）","category":"麦咖啡™","price":15.9,"originalPrice":23.0,"discountType":"促销优惠","canWithOrder":false},{"code":"507411","name":"麦咖啡™美式","category":"麦咖啡™","price":11.9,"originalPrice":19.0,"discountType":"促销优惠","canWithOrder":false},{"code":"507409","name":"麦咖啡™奶铁","category":"麦咖啡™","price":13.9,"originalPrice":21.0,"discountType":"促销优惠","canWithOrder":false},{"code":"510479","name":"燕麦奶铁","category":"麦咖啡™","price":9.9,"originalPrice":23.0,"discountType":"随单购麦金卡优惠","canWithOrder":true},{"code":"507387","name":"卡布奇诺","category":"麦咖啡™","price":21.0,"originalPrice":21.0,"discountType":null,"canWithOrder":false},{"code":"514851","name":"咖啡阿芙佳朵","category":"麦咖啡™","price":15.0,"originalPrice":15.0,"discountType":null,"canWithOrder":false},{"code":"520689","name":"鲜萃咖啡","category":"麦咖啡™","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"515949","name":"浓浓黑巧雪冰","category":"麦咖啡™","price":23.0,"originalPrice":23.0,"discountType":null,"canWithOrder":false},{"code":"507394","name":"牛奶","category":"麦咖啡™","price":19.0,"originalPrice":19.0,"discountType":null,"canWithOrder":false},{"code":"510488","name":"燕麦奶","category":"麦咖啡™","price":21.0,"originalPrice":21.0,"discountType":null,"canWithOrder":false},{"code":"9900011128","name":"“堡”你欢乐套餐","category":"500大卡套餐","price":28.0,"originalPrice":42.5,"discountType":null,"canWithOrder":false},{"code":"9900011121","name":"“苹”水相“鱼”套餐","category":"500大卡套餐","price":36.0,"originalPrice":54.5,"discountType":null,"canWithOrder":false},{"code":"9900011126","name":"酥脆无双套餐","category":"500大卡套餐","price":20.5,"originalPrice":20.5,"discountType":null,"canWithOrder":false},{"code":"9900011123","name":"“辣”么快乐套餐","category":"500大卡套餐","price":24.0,"originalPrice":36.5,"discountType":null,"canWithOrder":false},{"code":"9900009245","name":"牛气满满套餐","category":"500大卡套餐","price":34.5,"originalPrice":48.0,"discountType":null,"canWithOrder":false},{"code":"9900009242","name":"“苹板”支撑Pro套餐","category":"500大卡套餐","price":39.5,"originalPrice":53.5,"discountType":null,"canWithOrder":false},{"code":"9900015852","name":"举杯邀月柚桂茶","category":"饮品","price":13.0,"originalPrice":13.0,"discountType":null,"canWithOrder":false},{"code":"521817","name":"【美汁源】“多汁柠柠”","category":"饮品","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"9900008751","name":"可乐","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"3010","name":"雪碧","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"515520","name":"怡泉+C","category":"饮品","price":11.5,"originalPrice":11.5,"discountType":null,"canWithOrder":false},{"code":"515280","name":"阳光柠檬红茶","category":"饮品","price":9.5,"originalPrice":9.5,"discountType":null,"canWithOrder":false},{"code":"3755","name":"纯牛奶(盒装)","category":"饮品","price":11.0,"originalPrice":11.0,"discountType":null,"canWithOrder":false},{"code":"6362","name":"100% 苹果汁(盒装)","category":"饮品","price":12.0,"originalPrice":12.0,"discountType":null,"canWithOrder":false},{"code":"3757","name":"纯悦","category":"饮品","price":7.5,"originalPrice":7.5,"discountType":null,"canWithOrder":false},{"code":"9900003538","name":"学生专享饮品随心选","category":"饮品","price":10.0,"originalPrice":10.0,"discountType":null,"canWithOrder":false},{"code":"3505","name":"锡兰红茶","category":"饮品","price":11.5,"originalPrice":11.5,"discountType":null,"canWithOrder":false}],"aliases":{"巨无霸":["1100","9900005466","9900000888"],"big mac":["1100","9900005466","9900000888"],"双吉":["1120","9900005464"],"双层吉士":["1120","9900005464"],"吉士汉堡":["1120","9900005464","9900005449"],"芝士汉堡":["1120","9900005464"],"板烧":["1406","9900005462","9900000890"],"板烧鸡腿":["1406","9900005462","9900000890"],"麦辣鸡腿堡":["1440","9900000891"],"麦辣鸡腿":["1440","9900000891"],"麦香鸡":["1450","9900005453"],"麦香鱼":["1600","9900005460"],"鳕鱼堡":["9900003586","9900005413","9900000893"],"深海鳕鱼堡":["9900003586","9900005413","9900000893"],"不素之霸":["4648","9900000886","9900005411"],"安格斯":["511781","511782","9900000881","9900000882","9900005428","9900005430"],"厚牛堡":["511781","511782","9900000881","9900000882","9900006957"],"培根蔬萃":["1106","9900005468","9900000885"],"高达吉士":["521316"],"龙焰鸡腿堡":["521952","9900016073","9900016309"],"龙焰芝士棒鸡腿堡":["521953","9900016075","9900016310"],"咸蛋黄鸡腿蛋月堡":["521900","9900015850"],"鸡腿堡":["521952","1406","9900016073","9900016075"],"麦辣鸡翅":["1700","9900005451"],"鸡翅":["1700","9900005451"],"麦乐鸡":["1401","9900004835"],"鸡块":["1401","9900004835"],"那么大鸡排":["521156"],"鸡排":["521156"],"薄皮焦香v翅":["520445"],"v翅":["520445","9900006332"],"脆汁鸡":["9900005432","9900016078"],"薯条":["4810"],"中薯条":["4810"],"大薯条":["4810"],"玉米杯":["4437"],"玉米":["4437"],"苹果片":["6102"],"拉丝芝士条":["521986"],"芝士条":["521986"],"鸡薯双全盒":["9900016076"],"扭扭薯":["521901"],"薯饼":["9900016082"],"可乐":["9900008751"],"雪碧":["3010"],"芬达":["3010"],"柠檬红茶":["515280"],"红茶":["515280","3505"],"锡兰红茶":["3505"],"纯悦":["3757"],"矿泉水":["3757"],"水":["3757"],"牛奶":["3755","507394"],"纯牛奶":["3755"],"燕麦奶":["510488"],"苹果汁":["6362"],"果汁":["6362"],"咖啡":["520689","507411","507387","514851"],"美式":["507411"],"卡布奇诺":["507387"],"鲜萃咖啡":["520689"],"奶铁":["507409","510479"],"黑巧":["515946","515955"],"柚桂茶":["9900015852"],"圆筒":["515837"],"甜筒":["515837"],"冰淇淋":["515837","9900008745","9900008754"],"新地":["9900008745"],"麦旋风":["9900008754","521950","521917"],"派":["9900008752","521906","521922"],"糍粑派":["521906"],"大米派":["521922"],"蘸酱":["521966","521797","521799"],"牧场酱":["521797"],"山葵酱":["521799"],"芝士酱":["521966"],"随心配":["9900013304","9900015568"],"1+1":["9900013304","9900015568"],"大堡口福":["9900015602"],"开心乐园餐":["9900016057","9900016056","9900016058"],"儿童餐":["9900016057","9900016056","9900016058"],"亲子双人餐":["9900016055"],"四宫格":["9900015730","9900015729","9900005321"],"小食拼盘":["9900015730","9900015729","9900006332"],"双拼十翅":["9900006332"],"四件套随心选":["9900004236","9900010110","9900006957"]},"homophones":{"巨无八":"巨无霸","巨无吧":"巨无霸","巨无爸":"巨无霸","聚无霸":"巨无霸","麦辣鸡翅":"麦辣鸡翅","麦拉鸡翅":"麦辣鸡翅","麦乐机":"麦乐鸡","麦勒鸡":"麦乐鸡","薯条二":"薯条","数条":"薯条","暑条":"薯条","可乐二":"可乐","卡了":"可乐","可了":"可乐","双极":"双吉","板骚":"板烧","麦香于":"麦香鱼","麦香雨":"麦香鱼","雪壁":"雪碧","雪比":"雪碧","圆桶":"圆筒","甜桶":"圆筒","安格丝":"安格斯","安格司":"安格斯","玉米杯二":"玉米杯","鸡块二":"鸡块","咖啡二":"咖啡"},"pinyin":{"a":"啊阿","ai":"哀哎唉埃挨爱癌皑矮碍艾蔼隘","an":"俺安岸按暗案氨胺鞍","ang":"昂盎肮","ao":"傲凹奥懊敖澳熬翱袄","ba":"八叭吧坝巴扒把拔捌爸疤笆粑罢耙芭跋霸靶","bai":"佰拜摆柏白百稗败","ban":"伴办半扮扳拌搬斑板版班瓣绊般颁","bang":"傍帮梆棒榜磅绑膀蚌谤邦镑","bao":"保包堡宝报抱暴爆胞苞薄褒豹雹饱鲍","bei":"倍北卑备悲惫杯焙狈碑背被贝辈钡","ben":"奔本笨苯","beng":"崩泵甭绷蹦迸","bi":"壁币庇弊彼必敝比毕毖毙痹碧笔臂蓖蔽逼避鄙闭陛鼻","bian":"便卞变扁编贬辨辩辫边遍鞭","biao":"彪标膘表","bie":"别憋瘪鳖","bin":"宾彬摈斌滨濒","bing":"丙兵冰并柄炳病秉饼","bo":"伯剥勃博卜帛拨搏播波渤玻箔脖膊舶菠钵铂驳","bu":"不哺埠布怖捕步簿补部","ca":"擦","cai":"彩才材猜睬菜蔡裁财踩采","can":"参惨惭掺残灿蚕餐","cang":"仓沧舱苍藏","cao":"操曹槽糙草","ce":"侧册厕测策","ceng":"层曾蹭","cha":"叉察岔差插搽查碴茬茶诧","chai":"拆柴豺","chan":"产搀缠蝉谗铲阐颤馋","chang":"倡偿厂唱场尝常敞昌猖畅肠","chao":"吵嘲巢抄朝潮炒超钞","che":"彻扯掣撤澈车","chen":"尘忱晨沉臣衬趁辰郴陈","cheng":"乘呈城惩成承撑橙澄秤称程诚逞骋","chi":"侈吃尺弛持斥池炽痴翅耻赤迟驰齿","chong":"充冲宠崇虫","chou":"丑仇愁抽畴瞅稠筹绸臭踌酬","chu":"储出初厨处搐楚橱滁畜矗础触躇锄除雏","chuai":"揣","chuan":"串传喘川椽穿船","chuang":"创幢床疮窗闯","chui":"吹垂捶椎炊锤","chun":"唇春椿淳纯蠢醇","chuo":"戳绰","ci":"伺刺慈次此瓷疵磁糍茨词赐辞雌","cong":"丛从匆囱聪葱","cou":"凑","cu":"促簇粗醋","cuan":"窜篡蹿","cui":"催崔摧淬瘁粹翠脆萃","cun":"存寸村","cuo":"挫措搓撮磋错","da":"大打搭瘩答达","dai":"代傣呆带待怠戴歹殆袋贷逮","dan":"丹但单弹惮担掸旦氮淡耽胆蛋诞郸","dang":"党当挡档荡","dao":"倒刀到导岛悼捣盗祷稻蹈道","de":"得德的","deng":"凳灯登瞪等蹬邓","di":"低地堤嫡帝底弟抵敌涤滴狄笛第缔翟蒂迪递","dian":"佃典垫奠店惦掂殿淀滇点电甸碘靛颠","diao":"凋刁叼吊掉碉调钓雕","die":"叠爹碟蝶谍跌迭","ding":"丁叮定盯订钉锭顶鼎","diu":"丢","dong":"东侗冬冻动恫懂栋洞董","dou":"兜抖斗痘豆逗都陡","du":"堵妒度杜毒渡犊独督睹肚读赌镀","duan":"断段短端缎锻","dui":"兑堆对队","dun":"吨囤墩敦盾蹲遁钝顿","duo":"剁哆垛堕多夺惰掇朵舵跺躲","e":"俄厄娥峨恶扼蛾讹遏鄂额饿鹅","en":"恩","er":"二儿尔洱而耳贰饵","fa":"乏伐发法珐筏罚阀","fan":"凡反帆樊泛烦犯番矾繁翻范藩贩返钒饭","fang":"仿坊妨房放方纺肪芳访防","fei":"匪吠啡废沸肥肺菲诽费非飞","fen":"份分吩坟奋忿愤氛汾焚粉粪纷芬酚","feng":"丰冯凤奉封峰枫烽疯缝蜂讽逢锋风","fou":"否","fu":"付伏佛俘俯傅副咐复夫妇孵富幅府弗扶抚拂敷斧服氟浮涪父甫福符缚肤腐腑腹芙袱覆讣负赋赴辅辐釜阜附","ga":"嘎噶","gai":"改概溉盖该钙","gan":"干感敢杆柑甘秆竿肝赣赶","gang":"冈刚岗杠港纲缸肛钢","gao":"告搞皋稿篙糕羔膏镐高","ge":"个割各咯哥戈搁格歌疙胳葛铬阁隔革鸽","gei":"给","gen":"根跟","geng":"埂庚更梗羹耕耿","gong":"供公共功宫工巩弓恭拱攻汞贡躬龚","gou":"勾垢够构沟狗苟购钩","gu":"估古咕固姑孤故沽箍股菇蛊谷辜雇顾骨鼓","gua":"刮剐寡挂瓜褂","guai":"乖怪拐","guan":"关冠官惯棺灌管罐观贯馆","guang":"光广逛","gui":"傀刽圭归柜桂炔瑰癸硅规诡贵跪轨闺鬼龟","gun":"棍滚辊","guo":"国果裹过郭锅","ha":"哈蛤","hai":"亥孩害氦海还骇骸","han":"函含喊寒悍憨憾捍撼旱汉汗涵焊罕翰邯酣韩","hang":"夯杭航","hao":"号嚎壕好毫浩耗豪貉郝","he":"何合呵和喝核河涸盒禾荷菏褐贺赫阂鹤","hei":"嘿黑","hen":"很恨狠痕","heng":"亨哼恒横衡","hong":"哄宏弘洪烘红虹轰鸿","hou":"侯候厚后吼喉猴","hu":"乎互呼唬壶弧忽户护沪湖狐瑚糊胡葫虎蝴","hua":"划化华哗滑猾画花话","huai":"坏徊怀槐淮","huan":"唤宦幻患换桓欢涣焕环痪缓豢","huang":"凰幌恍惶慌晃煌皇磺簧荒蝗谎黄","hui":"会卉回徽恢悔惠慧挥晦毁汇灰烩秽绘蛔讳诲贿辉","hun":"婚昏浑混荤魂","huo":"伙惑或活火祸获豁货霍","ji":"伎冀几击剂即及吉圾基妓姬嫉季寂寄己忌急悸技挤既机极棘汲济激畸疾祭积稽箕籍级纪继绩缉肌脊蓟藉计讥记辑迹际集饥鸡","jia":"价佳假加嘉夹嫁家架枷甲稼茄荚贾钾颊驾","jian":"件俭健兼减剑剪坚奸尖建拣捡柬检歼涧渐溅煎监硷碱笺简箭缄肩舰艰茧荐见贱践鉴键间饯","jiang":"僵匠奖姜将桨江浆疆蒋讲酱降","jiao":"交侥剿叫娇搅教椒浇焦狡矫礁窖绞缴胶脚蕉角轿较郊酵铰饺骄","jie":"介借劫姐届戒截捷接揭杰洁界疥皆睫秸竭结节芥街解诫阶","jin":"仅今劲尽巾斤晋津浸烬禁筋紧襟谨近进金锦靳","jing":"井京兢净境径惊敬景晶痉睛竞竟粳精经茎荆警镜靖静颈鲸","jiong":"炯窘","jiu":"久九厩咎就揪救旧灸玖疚究纠臼舅酒韭","ju":"举俱具剧句咀局居巨惧拒拘据桔沮炬狙疽矩聚菊距踞锯鞠驹","juan":"倦卷娟捐眷绢鹃","jue":"倔决嚼抉掘撅攫爵绝觉诀","jun":"俊军君均峻浚竣菌郡钧骏","ka":"卡咖喀","kai":"凯开慨揩楷","kan":"刊勘坎堪槛看砍","kang":"亢康慷扛抗炕糠","kao":"拷烤考靠","ke":"克刻可咳坷壳客柯棵渴磕科苛课颗","ken":"啃垦恳肯","keng":"吭坑","kong":"孔恐控空","kou":"口寇扣抠","ku":"哭库枯窟苦裤酷","kua":"垮夸挎胯跨","kuai":"侩块快筷","kuan":"宽款","kuang":"况匡旷框狂眶矿筐","kui":"亏奎岿愧溃盔窥葵馈魁","kun":"困坤捆昆","kuo":"廓扩括阔","la":"啦喇垃拉腊蜡辣","lai":"来莱赖","lan":"兰婪懒拦揽栏滥澜烂篮缆蓝览谰阑","lang":"廊朗榔浪狼琅郎","lao":"佬劳姥捞涝潦烙牢老酪","le":"乐了肋","lei":"儡勒垒擂泪磊类累蕾镭雷","leng":"冷棱楞","li":"丽例俐傈利力励历厉厘吏哩喱李栗梨沥漓犁狸理璃痢砾礼离立篱粒荔莉里隶鲤黎","lia":"俩","lian":"帘廉怜恋敛涟炼练联脸莲连链镰","liang":"两亮凉晾梁粮粱良谅辆量","liao":"僚寥廖撂撩料燎疗聊辽镣","lie":"列劣烈猎裂","lin":"临凛吝拎林淋琳磷赁邻霖鳞","ling":"令伶凌另岭灵玲羚菱铃陵零领龄","liu":"六刘柳榴流溜琉留瘤硫馏","long":"咙垄拢泷窿笼聋陇隆龙","lou":"娄搂楼漏篓陋","lu":"卢卤庐录戮掳潞炉碌禄芦虏赂路陆露颅鲁鹿麓","luan":"乱卵孪峦挛滦","lun":"仑伦抡沦纶论轮","luo":"洛箩络罗萝落螺裸逻锣骆骡","lv":"侣吕屡履律旅氯滤率绿缕虑铝驴","lve":"掠略","ma":"吗嘛妈玛码蚂马骂麻","mai":"买卖埋脉迈麦","man":"慢曼满漫瞒蔓蛮谩馒","mang":"忙氓盲芒茫莽","mao":"冒卯帽毛猫矛茂茅貌贸铆锚","me":"么","mei":"妹媒媚寐昧枚梅每没煤玫眉美莓酶镁霉","men":"们门闷","meng":"孟梦檬猛盟萌蒙锰","mi":"密幂弥泌眯秘米糜蜜觅谜迷醚靡","mian":"免冕勉娩棉眠绵缅面","miao":"妙庙描渺瞄秒苗藐","mie":"灭蔑","min":"悯抿敏民皿闽","ming":"名命明螟铭鸣","miu":"谬","mo":"墨寞抹摩摸摹末模沫漠磨膜莫蘑陌魔默","mou":"某牟谋","mu":"亩募墓姆幕慕拇暮木母牡牧目睦穆","na":"呐哪娜拿纳那钠","nai":"乃奈奶氖耐","nan":"南男难","nang":"囊","nao":"恼挠淖脑闹","ne":"呢","nei":"内馁","nen":"嫩","neng":"能","ni":"你倪匿妮尼拟泥溺腻逆霓","nian":"年念拈捻撵碾蔫辗","niang":"娘酿","niao":"尿鸟","nie":"啮孽捏涅聂镊镍","nin":"您","ning":"凝宁拧柠泞狞","niu":"扭牛纽钮","nong":"农弄浓脓","nu":"努奴怒","nuan":"暖","nuo":"懦挪糯诺","nv":"女","nve":"疟虐","o":"哦","ou":"偶呕欧殴沤藕鸥","pa":"啪帕怕爬琶趴","pai":"徘拍排派湃牌","pan":"判叛攀潘畔盘盼磐","pang":"乓庞旁耪胖","pao":"刨咆抛泡炮袍跑","pei":"佩呸培沛胚裴赔配陪","pen":"喷盆","peng":"彭抨捧朋棚澎烹砰硼碰篷膨蓬鹏","pi":"僻劈匹啤坯屁批披毗琵疲痞皮砒脾譬辟霹","pian":"偏片篇骗","piao":"漂瓢票飘","pie":"撇瞥","pin":"品拼聘贫频","ping":"乒凭坪屏平瓶苹萍评","po":"坡婆泊泼破粕迫颇魄","pou":"剖","pu":"仆圃埔扑普曝朴浦瀑脯莆菩葡蒲谱铺","qi":"七乞企其凄启器奇契妻岂崎弃戚旗期柒栖棋欺歧气汽沏泣淇漆畦砌祁祈脐讫起迄骑齐","qia":"恰掐洽","qian":"乾仟前千堑嵌扦欠歉浅潜牵签谦谴迁遣钎钱钳铅黔","qiang":"呛墙强抢枪羌腔蔷","qiao":"乔侨俏峭巧悄撬敲桥橇瞧窍翘锹鞘","qie":"且切怯窃","qin":"亲侵勤寝擒沁琴禽秦芹钦","qing":"倾卿庆情擎晴氢氰清请轻青顷","qiong":"琼穷","qiu":"丘囚求泅球秋邱酋","qu":"区去取娶屈曲渠蛆趋趣躯驱龋","quan":"全券劝圈拳权泉犬痊醛颧","que":"却榷瘸确缺雀鹊","qun":"群裙","ran":"冉染然燃","rang":"嚷壤攘瓤让","rao":"扰绕饶","re":"惹热","ren":"人仁任刃壬妊忍纫认韧","reng":"仍扔","ri":"日","rong":"冗容戎溶熔绒茸荣蓉融","rou":"揉柔肉","ru":"乳儒入如孺汝茹蠕褥辱","ruan":"软阮","rui":"瑞蕊锐","run":"润闰","ruo":"弱若","sa":"撒洒萨","sai":"塞腮赛鳃","san":"三伞叁散","sang":"丧嗓桑","sao":"嫂扫搔骚","se":"涩瑟色","sen":"森","seng":"僧","sha":"傻刹厦啥杀沙煞砂纱莎","shai":"晒筛","shan":"删善山扇擅杉汕煽珊缮膳苫衫赡闪陕","shang":"上伤商墒尚晌裳赏","shao":"勺哨少捎梢烧稍绍芍邵韶","she":"奢射慑摄涉社舌舍蛇设赊赦","shen":"什伸呻娠婶审慎沈深渗甚申砷神绅肾身","sheng":"剩升圣声牲生甥盛省绳胜","shi":"世事仕似使侍势匙十史嗜噬士失始实室尸屎市师式恃拭拾施时是柿氏湿狮矢石示虱蚀视誓识试诗适逝释食饰驶","shou":"兽受售守寿手授收瘦首","shu":"书叔墅孰属庶恕戍抒数暑曙术束枢树梳殊淑漱熟疏竖署舒蔬薯蜀赎输述黍鼠","shua":"刷耍","shuai":"帅摔甩衰","shuan":"拴栓","shuang":"双爽霜","shui":"水睡税谁","shun":"吮瞬舜顺","shuo":"朔烁硕说","si":"丝司嗣嘶四寺巳思撕斯死私肆饲","song":"宋怂松耸讼诵送颂","sou":"嗽搜擞艘","su":"俗僳塑宿溯粟素肃苏诉速酥","suan":"算蒜酸","sui":"岁碎祟穗绥虽遂隋随隧髓","sun":"孙损笋","suo":"唆所梭琐索缩蓑锁","ta":"他塌塔她它挞獭踏蹋","tai":"台太态抬汰泰胎苔酞","tan":"叹坍坛坦探摊檀毯滩潭炭痰瘫碳袒谈谭贪","tang":"倘唐堂塘搪棠汤淌烫糖膛趟躺","tao":"套掏桃涛淘滔绦萄讨逃陶","te":"特","teng":"疼腾藤誊","ti":"体剃剔啼嚏屉惕提替梯涕踢蹄锑题","tian":"填天恬添甜田腆舔","tiao":"挑条眺跳迢","tie":"帖贴铁","ting":"亭停厅听庭廷挺汀烃艇","tong":"同彤捅桐桶痛瞳童筒统通酮铜","tou":"偷头投透","tu":"兔凸吐图土屠徒涂秃突途","tuan":"团湍","tui":"推腿蜕褪退颓","tun":"吞屯臀","tuo":"唾妥托拓拖椭脱陀驮驼鸵","wa":"哇娃挖洼瓦蛙袜","wai":"外歪","wan":"万丸婉完宛弯惋挽晚湾烷玩皖碗腕豌顽","wang":"亡妄往忘旺望枉汪王网","wei":"为伟伪位卫危味唯喂围委威尉尾巍微惟慰未桅渭潍畏纬维胃苇萎蔚谓违韦魏","wen":"吻文温瘟稳紊纹蚊问闻","weng":"嗡瓮翁","wo":"卧我挝握斡沃涡窝蜗","wu":"乌五伍侮务勿午吴吾呜坞屋巫悟戊捂无晤梧武毋污物舞芜诬误钨雾","xi":"习吸喜嘻夕媳希席息悉惜戏昔晰析檄汐洗溪烯熄熙牺犀矽硒稀系细膝袭西铣锡隙","xia":"下侠匣吓夏峡暇狭瞎虾辖霞","xian":"仙先县咸嫌宪弦掀显涎献现纤线羡腺舷衔贤锨闲限险陷馅鲜","xiang":"乡享像厢向响巷想橡湘相祥箱翔襄详象镶项香","xiao":"哮啸嚣孝宵小效晓校消淆硝笑肖萧销霄","xie":"些写协卸屑懈挟携斜械楔歇泄泻胁蝎蟹谐谢邪鞋","xin":"信心忻新欣芯薪衅辛锌","xing":"兴刑型姓幸形性惺星杏猩腥行邢醒","xiong":"兄凶匈汹熊胸雄","xiu":"休修嗅朽秀绣羞袖锈","xu":"叙吁嘘墟婿序徐恤戌旭絮绪续蓄虚许酗需须","xuan":"喧宣悬旋玄癣眩绚轩选","xue":"削学穴薛血雪靴鳕","xun":"勋寻巡循旬殉汛熏训讯询迅逊驯","ya":"丫亚压呀哑崖押涯牙芽蚜衙讶轧雅鸦鸭","yan":"严厌咽唁堰奄宴岩延彦掩沿淹演炎烟焉焰燕盐眼研砚艳蜒衍言谚阉阎雁颜验","yang":"仰佯养央扬杨样殃氧洋漾疡痒秧羊阳鸯","yao":"咬妖姚尧摇瑶窑耀腰舀药要谣遥邀钥","ye":"业也冶叶噎夜掖曳椰液爷耶腋野页","yi":"一义乙亦亿以仪伊依倚医壹夷姨宜屹已异彝役忆怡意抑揖易椅毅沂溢疑疫益矣移绎翌翼肄胰臆艺蚁衣裔议译诣谊逸遗邑铱颐","yin":"印吟因姻寅尹引殷淫茵荫银阴隐音饮","ying":"婴应影映樱盈硬缨英荧莹萤营蝇赢迎颖鹰","yo":"哟","yong":"佣勇咏庸恿拥永泳涌用痈臃蛹踊雍","you":"优佑又友右尤幼幽忧悠有柚油游犹由诱邮酉釉铀","yu":"与予于余俞喻域娱宇寓屿峪御愈愉愚榆欲浴淤渔渝狱玉盂禹羽育舆芋虞裕誉语豫迂逾遇郁隅雨预驭鱼","yuan":"元冤原员园圆垣怨愿援渊源猿缘苑袁辕远院鸳","yue":"岳悦曰月粤约越跃阅","yun":"云允匀孕晕耘蕴运郧酝陨韵","za":"匝咋杂砸","zai":"仔再哉在宰栽灾载","zan":"咱攒暂赞","zang":"脏葬赃","zao":"凿噪早枣澡灶燥皂糟藻蚤躁造遭","ze":"则择泽责","zei":"贼","zen":"怎","zeng":"增憎赠","zha":"乍喳扎札柞栅榨渣炸眨诈铡闸","zhai":"债宅寨摘斋窄","zhan":"占展崭战斩栈毡沾湛盏瞻站粘绽蘸詹","zhang":"丈仗帐张彰掌杖樟涨漳瘴章胀账长障","zhao":"兆召找招昭沼照爪罩肇赵","zhe":"哲折浙着者蔗蛰辙这遮锗","zhen":"侦帧振斟枕珍甄疹真砧臻诊贞针镇阵震","zheng":"争征怔拯挣政整正狰症睁蒸证郑","zhi":"之侄值制只吱址峙帜志执指挚掷支旨智枝植止殖汁治滞炙痔直知秩稚窒纸织置职肢脂至致芝蜘质趾","zhong":"中仲众忠盅种终肿衷重钟","zhou":"周咒宙州帚昼洲皱粥肘舟诌轴骤","zhu":"主住助嘱拄朱柱株注烛煮猪珠瞩祝竹筑著蛀蛛诛诸贮逐铸驻","zhua":"抓","zhuai":"拽","zhuan":"专撰砖篆赚转","zhuang":"壮妆庄撞桩状装","zhui":"坠缀赘追锥","zhun":"准谆","zhuo":"卓啄拙捉桌浊灼茁酌","zi":"兹咨姿子字孜淄渍滋滓籽紫自资","zong":"宗总棕纵综踪鬃","zou":"奏揍走邹","zu":"卒族祖租组诅足阻","zuan":"纂钻","zui":"嘴最罪醉","zun":"尊遵","zuo":"佐作做坐左座昨琢"},"frequent":{"code":"9900015602","tags":["我的常点"]},"coupons":[{"name":"中薯条买一送一","price":13.5,"validFrom":"2026-10-12 10:30","validTo":"2026-10-16 23:59","weekdays":["周一","周二","周三","周四","周五"],"timeFrom":"10:30","timeTo":"23:59","tags":["到店专用","外送专用"]},{"name":"王牌小食拼","price":15.9,"validFrom":"2026-10-12 10:30","validTo":"2026-10-16 23:59","weekdays":["周一","周二","周三","周四","周五"],"timeFrom":"10:30","timeTo":"23:59","tags":["到店专用","外送专用"]},{"name":"火腿扒堡早餐两件套","price":9.9,"validFrom":"2026-10-16 05:00","validTo":"2026-10-16 10:29","weekdays":["周五"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"巧克力味厚松饼猪柳蛋套餐","price":29.9,"validFrom":"2026-10-17 05:00","validTo":"2026-10-17 10:29","weekdays":["周六"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"巧克力味厚松饼猪柳蛋套餐","price":29.9,"validFrom":"2026-10-18 05:00","validTo":"2026-10-18 10:29","weekdays":["周日"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"火腿扒堡早餐两件套","price":9.9,"validFrom":"2026-10-19 05:00","validTo":"2026-10-19 10:29","weekdays":["周一"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"芝香脆鸡扒堡早餐两件套","price":9.9,"validFrom":"2026-10-20 05:00","validTo":"2026-10-20 10:29","weekdays":["周二"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]},{"name":"高达芝士蛋堡早餐两件套","price":9.9,"validFrom":"2026-10-21 05:00","validTo":"2026-10-21 10:29","weekdays":["周三"],"timeFrom":"05:00","timeTo":"10:29","tags":["到店专用"]}],"couponLimitation":"关键限制：query-my-coupons 与 available-coupons 的返回里都没有 couponId / couponCode，而 calculate-price 与 create-order 套券必须传这两个字段。也就是说，纯 MCP 链路目前拿不到可回填的券 ID。本项目因此只做到「语音播报有哪些券、什么时段能用」，不假装能自动套券。"};
 const PRICE_SNAPSHOT = (LIVE && LIVE.price) || {"productOriginalPrice":5000,"productPrice":5000,"originalPrice":5000,"discount":0,"price":5000,"productList":[{"productCode":"1100","productName":"巨无霸","quantity":1,"originalSubtotal":2600,"subtotal":2600},{"productCode":"4810","productName":"中薯条","quantity":1,"originalSubtotal":1450,"subtotal":1450},{"productCode":"9900008751","productName":"可乐","quantity":1,"originalSubtotal":950,"subtotal":950}],"takeWayList":[{"code":"eat-in","title":"堂食","subtitle":"店内用餐"},{"code":"take-in-store","title":"外带","subtitle":"店内自提"}]};
 const BUILD_INFO = {"generatedBy":"scripts/render_app.py","generatedAt":"2026-10-15","storeCode":"3450121","storeName":"麦当劳成都天府三街餐厅","capturedAt":"2026-10-15","itemCount":122,"categoryCount":15,"aliasCount":86};
+
+/* 拼音表：数据里是「音节 → 汉字串」的紧凑存法，启动时展开一次成「字 → 音节」。
+   展开后所有匹配都只是查表，不再有任何计算开销。 */
+let PY = {};
 
 /* 演示模式下的算价：按菜单现价相加，不做任何优惠推算。
    返回结构与真实 calculate-price 对齐，区别用 `estimated` 字段标出来，
@@ -402,6 +488,138 @@ function scoreName(query, candidate) {
   return 0;
 }
 
+/* ---- 同音容错：拼音层 ----
+
+   语音识别错的字，绝大多数是**同音字**（「巨无霸」→「巨无八」、「薯条」→「数条」）。
+   手写的误听纠正表只能覆盖我们想得到的几十种；拼音层能覆盖**所有**同音错法。
+   更关键的是，它还顺带解决了「平翘舌不分」这类识别器本身的老毛病——
+   见下面的模糊音处理。
+
+   拼音表由 scripts/build_pinyin.py 在构建时用 pypinyin 算好，随仓库提交，
+   所以页面运行时依旧零依赖，只是查表。
+   表要覆盖 GB2312 一级汉字（3766 字 / 16 KB，按音节分组压过体积）——
+   只收菜单用字是个坑：错字天生就是菜单外的字（「可乐」听成「渴乐」，
+   「渴」不在菜单里），表比菜单窄就等于整层失效。
+
+   两条设计约束：
+   1) 拼音层只用来**补救**，字面对得上永远优先 —— 所以分数封顶 78，
+      低于任何字面命中（最低一档的字面命中是 70）。
+   2) 少于两个字的查询不启用拼音层：单个音太宽泛，会把「牛」匹配到「牛奶」「牛堡」。 */
+
+/* 模糊音：识别器常把平翘舌、前后鼻音弄混（尤其南方口音），
+   把 zh/ch/sh 归到 z/c/s、ng 归到 n 之后再比一次，能救回一大类错字。 */
+function fuzzyPinyinSeq(seq) {
+  return seq.map(p => String(p)
+    .replace(/^zh/, 'z').replace(/^ch/, 'c').replace(/^sh/, 's')
+    .replace(/ang$/, 'an').replace(/eng$/, 'en').replace(/ing$/, 'in'));
+}
+
+/* 拼音表在数据里是「音节 → 汉字串」存着的（「ke」→「可渴克刻客课…」），
+   这样 3700 多字的表只有 16 KB。这里一次性展开成「字 → 音节」供查表。
+   为什么要覆盖到 GB2312 一级汉字这个量级：
+   第一版只收了菜单里出现过的字，结果最该救的情况反而救不了——
+   「可乐」被听成「渴乐」时「渴」根本不在菜单里，查不到读音，整层失效。
+   错字天生是菜单外的字，所以表必须比菜单宽得多。 */
+function expandPinyin(grouped) {
+  const flat = {};
+  if (!grouped || typeof grouped !== 'object') return flat;
+  for (const syllable of Object.keys(grouped)) {
+    for (const ch of String(grouped[syllable] || '')) flat[ch] = syllable;
+  }
+  return flat;
+}
+
+function toPinyinSeq(s, table) {
+  const out = [];
+  for (const ch of String(s || '')) {
+    if (table && table[ch]) out.push(table[ch]);
+    else if (/[a-z0-9]/.test(ch)) out.push(ch);
+    else out.push(ch);          // 表外的字原样保留：两侧同字时仍然能对上
+  }
+  return out;
+}
+
+/* 最长公共子序列长度（有序、允许跳字） */
+function lcsSeq(a, b) {
+  let best = 0;
+  let prev = new Array(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    const row = new Array(b.length + 1).fill(0);
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) { row[j] = prev[j - 1] + 1; if (row[j] > best) best = row[j]; }
+    }
+    prev = row;
+  }
+  return best;
+}
+
+/* 两个拼音序列有多像。
+
+   这里踩过一个真坑：第一版用的是「最长公共子序列 ÷ 用户说的音节数」，
+   于是只要名字**开头**读音对得上就能拿满分——
+   说「薯条」时，「薯条」和「薯条脆卜卜毛绒周边」同分并列，
+   页面凭空多问一句「你要的是哪一个」，而用户刚刚说得很清楚。
+   根源是那个比值对长名字太慷慨。
+
+   改成：长度相同且逐位相同 → 完全同音（1.0）；其余一律用对称的
+   Dice 系数 2·LCS ÷ (|q| + |c|)，名字比用户说的长得多时会被自然降权。 */
+function seqSimilarity(q, c) {
+  if (!q.length || !c.length) return 0;
+  if (q.length === c.length) {
+    let same = 0;
+    for (let i = 0; i < q.length; i++) if (q[i] === c[i]) same++;
+    if (same === q.length) return 1;      // 长度一样、每个音都一样 → 完全同音
+  }
+  const l = lcsSeq(q, c);
+  return l ? (2 * l) / (q.length + c.length) : 0;
+}
+
+/* 用户说的整段读音，是否**原封不动、连续、不跳字**地嵌在候选名里？
+   返回 { hit, at, len }：len 是最长的连续重合音节数，at 是它的位置。
+
+   为什么光靠比例不够：中文商品名是「修饰语 + 核心词」，核心词在**后面**。
+   用户把「蘸酱炸鸡」说成「咋鸡」时（zha→za 是平翘舌），
+   只有 2 / 4 个音节对上，Dice 系数只有 0.67，低于阈值就被判成「没听懂」——
+   可「你说的整段读音原封不动就是它名字的结尾」这件事本身是很硬的证据。
+   反过来「薯条」对「薯条脆卜卜毛绒周边」：比例同样是 2 / 9，很惨，
+   而且它落在**开头**——那是「用户只说了修饰语的一半，核心词还没说出口」，
+   不能当成认出了这件周边。同样的低比例，一个是核心词命中，一个是核心词缺失，
+   所以这里必须区分「嵌在哪儿」，不能只看像多少。 */
+function contiguousSeqRun(q, c) {
+  let len = 0, at = -1;
+  for (let i = 0; i + q.length <= c.length; i++) {
+    let k = 0;
+    while (k < q.length && c[i + k] === q[k]) k++;
+    if (k > len) { len = k; at = i; }
+  }
+  return { hit: len > 0 && len === q.length, at, len };
+}
+
+/* 返回 { exact, fuzzy, embed }：
+     exact —— 读音完全一致的程度；
+     fuzzy —— 把平翘舌、前后鼻音归并之后再比的程度；
+     embed —— 整段读音连续嵌进候选名的程度（仅在**嵌在非开头位置**时非零），
+              用来救「只说了后半段核心词」这类说法，见上面的注释。
+
+   注意 embed 与「长度比例」是互补的两件事：比例判断「像多少」，
+   embed 判断「说的那一段整体在不在里面、在哪个位置」。
+   单靠任何一个都会出错，所以两个都留着，让它们各自把自己擅长的情形捞回来。 */
+function pinyinMatch(query, candidate, table) {
+  if (!table) return { exact: 0, fuzzy: 0, embed: 0 };
+  const q = toPinyinSeq(normalizeUtterance(query), table);
+  const c = toPinyinSeq(normalizeUtterance(candidate), table);
+  if (q.length < 2 || !c.length) return { exact: 0, fuzzy: 0, embed: 0 };
+  const fq = fuzzyPinyinSeq(q), fc = fuzzyPinyinSeq(c);
+  const run = contiguousSeqRun(fq, fc);
+  return {
+    exact: seqSimilarity(q, c),
+    fuzzy: seqSimilarity(fq, fc),
+    // at > 0 才给分：嵌在开头说明用户说的只是名字的前半截，核心词还没出现
+    embed: (run.hit && run.at > 0) ? q.length / c.length : 0
+  };
+}
+
+
 /* 商品名的规格后缀。剥掉它们是为了让「巨无霸」也能匹配到「巨无霸三件套」，
    但反过来不能用它盖过单品——见 corePick 的规则。 */
 const NAME_SUFFIX = /(套餐|三件套|四件套|单品精选|随心选|双人餐|四件套随心选|三件套随心选)$/;
@@ -435,14 +653,16 @@ function corePick(ties, items) {
 }
 
 /* 在整份菜单里找 query 最可能指向的餐品。
-   返回 { best, ties, alsoConsider }：
+   返回 { best, ties, alsoConsider, top }：
      - ties 是「和第一名分数接近」的候选，页面拿它问「你是想要 A 还是 B」；
      - alsoConsider 是「已经认定了单品，但菜单里还有更大的套装」，
        页面只需要顺口提一句，不该反过来打断用户。
+     - top 是第一名的分数。多候选择优（语音识别一次会给好几个转写）
+       要靠它判断「这句话有没有被真正理解」。
    歧义不猜，但也别把用户说得很清楚的话当成歧义。 */
-function matchItems(query, items, aliases) {
+function matchItems(query, items, aliases, table) {
   const q = normalizeUtterance(query);
-  if (!q) return { best: null, ties: [], alsoConsider: [] };
+  if (!q) return { best: null, ties: [], alsoConsider: [], top: 0 };
 
   const scored = new Map();       // code -> score
   const bump = (code, sc) => { if (!scored.has(code) || scored.get(code) < sc) scored.set(code, sc); };
@@ -461,10 +681,30 @@ function matchItems(query, items, aliases) {
     bump(item.code, scoreName(q, name));
     if (bare && bare !== name) bump(item.code, scoreName(q, bare) - 3);
   }
+  // 3) 拼音层：字面对不上时按读音再找一遍。这是「识别不准」的主要补救手段。
+  //    分数刻意压在 78 以内——只要字面上对得上（最低一档 70 分的包含关系除外），
+  //    字面永远优先；但字面完全失配时，读音对得上就是最强的证据。
+  //    三条通路从强到弱：整段同音 → 归并模糊音后整段同音 → 整段读音嵌进名字中后段。
+  //    最后那条分数压在 60~74，永远低于字面命中，所以它只会「救回没听懂」，
+  //    不会「抢走已经认出来的东西」。
+  if (table) {
+    for (const item of items) {
+      const pm = pinyinMatch(q, item.name, table);
+      if (pm.exact >= 0.75) bump(item.code, 78 * pm.exact);
+      else if (pm.fuzzy >= 0.8) bump(item.code, 74 * pm.fuzzy);
+      else if (pm.embed >= 0.5) bump(item.code, 60 + 14 * pm.embed);
+    }
+    for (const alias of Object.keys(aliases || {})) {
+      const pm = pinyinMatch(q, alias, table);
+      if (pm.exact >= 0.75) { for (const c of aliases[alias]) bump(c, 77 * pm.exact); }
+      else if (pm.fuzzy >= 0.8) { for (const c of aliases[alias]) bump(c, 73 * pm.fuzzy); }
+      else if (pm.embed >= 0.5) { for (const c of aliases[alias]) bump(c, 58 + 14 * pm.embed); }
+    }
+  }
 
   const list = [...scored.entries()].filter(([, sc]) => sc >= 45)
     .sort((a, b) => b[1] - a[1]);
-  if (!list.length) return { best: null, ties: [], alsoConsider: [] };
+  if (!list.length) return { best: null, ties: [], alsoConsider: [], top: 0 };
 
   const top = list[0][1];
   // 分差 8 分以内算并列：语音场景下宁可多问一句，也不要替用户猜错
@@ -475,15 +715,15 @@ function matchItems(query, items, aliases) {
   //   用户明明指名要套装，却被换成单品。
   const full = items.filter(it => normalizeUtterance(it.name) === q).map(it => it.code);
   if (full.length === 1 && ties.indexOf(full[0]) >= 0) {
-    return { best: full[0], ties: [full[0]],
+    return { best: full[0], ties: [full[0]], top,
              alsoConsider: ties.filter(c => c !== full[0]).slice(0, 3) };
   }
 
   // 优先级 2：并列候选的核心名相同、且不带后缀的单品唯一 → 认定那个单品
   const core = corePick(ties, items);
-  if (core) return { best: core.best, ties: [core.best], alsoConsider: core.also };
+  if (core) return { best: core.best, ties: [core.best], alsoConsider: core.also, top };
 
-  return { best: list[0][0], ties, alsoConsider: [] };
+  return { best: list[0][0], ties, alsoConsider: [], top };
 }
 
 /* 把一句话解析成结构化的意图。规则优先、可预测——
@@ -536,32 +776,34 @@ function parseUtterance(raw, ctx) {
   const items = (ctx && ctx.items) || [];
   const aliases = (ctx && ctx.aliases) || {};
   const homophones = (ctx && ctx.homophones) || {};
+  const table = (ctx && ctx.pinyin) || null;
   const storeCount = (ctx && ctx.storeCount) || 0;
   const inStoreStep = !!(ctx && ctx.inStoreStep);
 
   const s = applyHomophones(normalizeUtterance(raw), homophones);
-  if (!s) return { intent: 'unknown', raw: String(raw || ''), ties: [], alsoConsider: [] };
+  if (!s) return { intent: 'unknown', raw: String(raw || ''), ties: [], alsoConsider: [], matchScore: 0 };
 
   // 门店步骤优先认序号
   if (inStoreStep) {
     const pick = parseStorePick(s, storeCount);
-    if (pick) return { intent: 'pick-store', index: pick, raw, ties: [], alsoConsider: [] };
+    if (pick) return { intent: 'pick-store', index: pick, raw, ties: [], alsoConsider: [], matchScore: 100 };
   }
 
   // 纯数字（在非门店步骤）当作数量指令
   if (/^[一二三四五六七八九十\d]{1,3}$/.test(s)) {
     const n = cnNumToInt(s);
-    if (n) return { intent: 'set-qty', qty: n, raw, ties: [], alsoConsider: [] };
+    if (n) return { intent: 'set-qty', qty: n, raw, ties: [], alsoConsider: [], matchScore: 60 };
   }
 
   for (const [name, pat] of INTENTS) {
     if (!pat) continue;
     if (pat.test(s)) {
       if (name === 'remove') {
-        const m = matchItems(s, items, aliases);
-        return { intent: 'remove', code: m.best, ties: m.ties, alsoConsider: [], raw };
+        const m = matchItems(s, items, aliases, table);
+        return { intent: 'remove', code: m.best, ties: m.ties, alsoConsider: [],
+                 matchScore: m.top || 0, raw };
       }
-      return { intent: name, raw, ties: [], alsoConsider: [] };
+      return { intent: name, raw, ties: [], alsoConsider: [], matchScore: 100 };
     }
   }
 
@@ -573,12 +815,36 @@ function parseUtterance(raw, ctx) {
     if (n && n >= 1 && n <= 20) qty = n;
   }
   let name = s.replace(QTY_PAT, '').replace(VERB_PAT, '').replace(/[了吧呢啊呀哦嘛]+$/g, '');
-  if (!name) return { intent: 'unknown', raw, ties: [], alsoConsider: [] };
+  if (!name) return { intent: 'unknown', raw, ties: [], alsoConsider: [], matchScore: 0 };
 
-  const m = matchItems(name, items, aliases);
-  if (!m.best) return { intent: 'unknown', raw, query: name, ties: [], alsoConsider: [] };
+  const m = matchItems(name, items, aliases, table);
+  if (!m.best) return { intent: 'unknown', raw, query: name, ties: [], alsoConsider: [], matchScore: 0 };
   return { intent: 'add', code: m.best, ties: m.ties, alsoConsider: m.alsoConsider || [],
-           qty, query: name, raw };
+           qty, query: name, matchScore: m.top || 0, raw };
+}
+
+/* ---- 从多个转写里挑出「最被理解的那一句」 ----
+
+   中文语音识别的第一名经常是错的，但备选里往往就有对的。
+   只用第一名等于把这个信息量最大的信号白白扔掉。
+
+   parseScore 回答的是「这句话被真正理解了吗」：
+     认出了具体商品（分数随匹配质量走）＞ 明确控制指令 ＞ 完全没听懂。
+   同为控制指令时按识别器自己的置信度排。 */
+
+function parseScore(p) {
+  if (!p) return -1;
+  switch (p.intent) {
+    case 'unknown':     return 0;
+    case 'add':         return 55 + (p.matchScore || 0) * 0.4;
+    case 'remove':      return p.code ? 50 + (p.matchScore || 0) * 0.4 : 8;
+    case 'pick-store':  return 70;
+    default:            return 60;      // 控制指令：明确，但没携带商品信息
+  }
+}
+
+function rankCandidates(cands) {
+  return cands.slice().sort((a, b) => (b.score - a.score) || (b.conf - a.conf));
 }
 
 /* 门店名匹配：用最长公共子串，而不是字符覆盖率。
@@ -604,17 +870,29 @@ function lcsLength(a, b) {
   return best;
 }
 
-function storeScore(query, name) {
+function storeScore(query, name, table) {
   const q = normalizeUtterance(query), n = normalizeUtterance(name);
   if (!q || !n) return 0;
   const l = lcsLength(q, n);
   // 主看最长公共子串长度，次看它占用户所说长度的比例
-  return l * 10 + (l / Math.max(1, Math.min(q.length, n.length))) * 10;
+  let sc = l * 10 + (l / Math.max(1, Math.min(q.length, n.length))) * 10;
+  // 店名同样会被听错字（「天府三街」→「天府三阶」），所以也加一点拼音分。
+  // 权重刻意压得很小：门店名的区分靠的是「哪几个字连在一起」，
+  // 读音只是补充证据，不能让同音字把两家店的分差抹平。
+  if (table) {
+    const pm = pinyinMatch(q, n, table);
+    // 店名普遍很长（「麦当劳成都天府三街餐厅」），用户往往只说中间那截
+    // （「天府三街」），所以 embed 这一路对门店尤其有用，不能漏掉。
+    sc += Math.max(pm.exact, pm.fuzzy, pm.embed) * 6;
+  }
+  return sc;
 }
 
 globalThis.__MCVOICE__ = {
   cnNumToInt, normalizeUtterance, applyHomophones, scoreName,
-  matchItems, parseUtterance, parseStorePick, lcsLength, storeScore
+  matchItems, parseUtterance, parseStorePick, lcsLength, storeScore,
+  toPinyinSeq, fuzzyPinyinSeq, pinyinMatch, seqSimilarity, contiguousSeqRun, expandPinyin,
+  parseScore, rankCandidates
 };
 /* ---VOICE-END--- */
 
@@ -647,6 +925,9 @@ const STEPS = {
     say: '这一单到这里就结束了。', chips: ['重新点一单'] }
 };
 
+/* 总步数从 STEPS 自己算出来，加一步就不用改两处 */
+const TOTAL_STEPS = Math.max(...Object.values(STEPS).map(s => s.no));
+
 const State = {
   step: 'welcome',
   stores: [],
@@ -657,6 +938,7 @@ const State = {
   batch: { category: null, offset: 0 },
   pendingTies: null, // 待消歧的候选
   orderResult: null,
+  lastHeard: '',     // 最近一次识别到的原话（屏幕上回显 + 没听懂时念出来）
   started: false
 };
 
@@ -716,6 +998,8 @@ function announce(text, opts) {
 const SR_CTOR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog = null, listening = false, wantListen = false, micBlocked = false;
 let micUnavailableMsg = '';
+// 连续自动重启的次数：用来在异常情况（浏览器立刻又结束）下退避，避免空转
+let restarts = 0;
 
 /* 语音能力不可用时的统一说法。抽成常量是因为它要在两个地方出现：
    用户点麦克风时，以及流程开始时——两处必须说同一件事。 */
@@ -732,29 +1016,101 @@ function speechSupport() {
   };
 }
 
+/* ---- 听到原文回显 ----
+
+   识别不准时，这一条是用户唯一的抓手：分不清「麦克风没听见」和「听见了但听错了」，
+   就无从决定该重说一遍、还是换个说法。所以每一次识别——包括说话途中的中间结果——
+   都如实显示出来，一个字都不加工。 */
+function showHeard(text, opts) {
+  const o = opts || {};
+  const box = $('heard');
+  if (!box) return;
+  const t = String(text == null ? '' : text).trim();
+  if (!t) {
+    box.hidden = true;
+    State.lastHeard = '';
+    return;
+  }
+  const lbl = $('heardLbl');
+  if (lbl) lbl.textContent = o.interim ? '正在听' : '听到原文';
+  box.classList.toggle('live', !!o.interim);
+  $('heardVal').textContent = t + (o.note ? '　' + o.note : '');
+  box.hidden = false;
+  if (!o.interim) State.lastHeard = t;
+}
+
+/* ---- 一次识别会给好几个转写，逐个试着理解，挑最有把握的那个 ----
+
+   打分（parseScore）与排序（rankCandidates）都是纯函数，放在上面的理解核里，
+   由 tests/test_voice.mjs 原样抽出执行——这段「选哪一句」的逻辑
+   最终决定了用户说的话会不会被听错，必须能被单测盯住，不能只活在浏览器里。 */
+function interpret(text) {
+  const clean = String(text || '').trim();
+  if (!clean) return null;
+  const parsed = parseUtterance(clean, {
+    items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
+    pinyin: PY,
+    storeCount: State.stores.length, inStoreStep: State.step === 'store'
+  });
+  return { text: clean, parsed, score: parseScore(parsed), conf: 0 };
+}
+
+function handleAlternatives(alts) {
+  const cands = [];
+  for (const a of alts) {
+    const it = interpret(a.text);
+    if (it) { it.conf = a.conf || 0; cands.push(it); }
+  }
+  if (!cands.length) return;
+  const win = rankCandidates(cands)[0];
+  const top1 = alts[0].text;
+  // 如果采纳的不是识别第一名，要说清是「按哪一句理解的」——
+  // 用户看到原文对不上时，才不会以为程序在瞎猜。
+  showHeard(top1, { note: win.text !== top1 ? '（按「' + win.text + '」理解）' : '' });
+  handleUtterance(win.text, { fromSpeech: true });
+}
+
 function buildRecognition() {
   if (!SR_CTOR) return null;
   const r = new SR_CTOR();
   r.lang = 'zh-CN';
   r.continuous = true;
-  r.interimResults = false;
-  r.maxAlternatives = 1;
+  // 打开中间结果：说话过程中就能把「正在听：巨无…」显示出来。
+  // 没有它，用户说完一句到看见反应之间是纯黑箱，只能靠猜。
+  r.interimResults = true;
+  // 要多个候选：第一名错了还有备选可救（见 handleAlternatives）
+  r.maxAlternatives = 5;
+
   r.onresult = (ev) => {
+    let interim = '';
+    const finals = [];
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
-      if (!ev.results[i].isFinal) continue;
-      const text = ev.results[i][0].transcript;
-      if (text && text.trim()) handleUtterance(text);
+      const res = ev.results[i];
+      const alts = [];
+      for (let k = 0; k < res.length; k++) {
+        const t = (res[k].transcript || '').trim();
+        if (t) alts.push({ text: t, conf: typeof res[k].confidence === 'number' ? res[k].confidence : 0 });
+      }
+      if (!alts.length) continue;
+      if (res.isFinal) finals.push(alts);
+      else if (!interim) interim = alts[0].text;
     }
+    if (interim) showHeard(interim, { interim: true });
+    for (const alts of finals) handleAlternatives(alts);
   };
+
   r.onerror = (ev) => {
     const map = {
       'not-allowed':    '麦克风权限被拒绝了。请在浏览器地址栏的权限设置里允许麦克风，然后按「开始使用」重试；也可以直接用下面的输入框打字。',
       'service-not-allowed': '这个浏览器的语音识别服务不可用。请改用 Chrome 或 Edge；也可以直接在下面的输入框打字。',
       'audio-capture':  '没有找到麦克风设备。请插上麦克风或检查系统录音设置；也可以直接在下面的输入框打字。',
-      'no-speech':      '',
       'network':        '语音识别需要联网，当前网络不通。可以直接在下面的输入框打字。',
+      'no-speech':      '',
       'aborted':        ''
     };
+    // 「没听到声音」不播报（每次停顿都出声很烦），但要在屏幕上留痕：
+    // 用户至少能看出「麦克风是活的、只是没听见」，而不是以为程序卡住了。
+    if (ev.error === 'no-speech') showHeard('（这一句没听到声音）');
     const msg = map[ev.error];
     if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed' || ev.error === 'audio-capture') {
       micBlocked = true;
@@ -763,14 +1119,25 @@ function buildRecognition() {
     }
     if (msg) { announce(msg, { alert: msg }); }
   };
+
   r.onend = () => {
     listening = false;
     syncMicButton();
-    // Chrome 会在静音几秒后自动结束识别，这里拉起来继续听
+    // Chrome 会在静音几秒后自动结束识别，这里拉起来继续听。
+    // 加一个退避：如果浏览器立刻又结束（权限/网络异常时会发生），
+    // 无脑重启会变成每秒几十次的空转，所以第二次起延后一点。
     if (wantListen && !micBlocked) {
-      try { r.start(); listening = true; syncMicButton(); } catch (e) { /* 已经在跑了 */ }
+      restarts++;
+      const delay = restarts > 3 ? 500 : 60;
+      setTimeout(() => {
+        if (!wantListen || micBlocked) return;
+        try { r.start(); listening = true; syncMicButton(); }
+        catch (e) { /* 已经在跑了 */ }
+      }, delay);
     }
   };
+
+  r.onstart = () => { restarts = 0; listening = true; syncMicButton(); };
   return r;
 }
 
@@ -782,18 +1149,35 @@ function startListening() {
     return false;
   }
   wantListen = true;
+  restarts = 0;
   try { recog.start(); listening = true; syncMicButton(); return true; }
   catch (e) { listening = true; syncMicButton(); return true; }
 }
-function stopListening() { wantListen = false; if (recog) { try { recog.stop(); } catch (e) {} } listening = false; syncMicButton(); }
+function stopListening() {
+  wantListen = false;
+  if (recog) { try { recog.stop(); } catch (e) {} }
+  listening = false;
+  syncMicButton();
+}
 function pauseRecognition() { if (recog && listening) { try { recog.stop(); } catch (e) {} } }
 function resumeRecognition() { if (recog && wantListen && !micBlocked) { try { recog.start(); } catch (e) {} } }
 
 function syncMicButton() {
   const b = $('micBtn');
-  if (!State.started) { b.textContent = '开始使用'; b.setAttribute('aria-pressed', 'false'); return; }
-  b.textContent = listening ? '正在听你说话 —— 按一下停止' : '按一下开始说话';
+  const note = $('micNote');
+  if (!State.started) {
+    b.textContent = '开始使用';
+    b.setAttribute('aria-pressed', 'false');
+    if (note) note.textContent = '按一下开始，之后随时可以按它开关说话';
+    return;
+  }
+  b.textContent = listening ? '停止说话' : '开始说话';
   b.setAttribute('aria-pressed', listening ? 'true' : 'false');
+  if (note) {
+    note.textContent = listening
+      ? '正在听你说话。说完稍等一下，我会把听到的原话显示出来再处理。'
+      : '已经停止拾音。按一下继续说话。';
+  }
 }
 
 /* ==========================================================================
@@ -815,7 +1199,7 @@ function itemPriceText(item) {
 
 function renderStep() {
   const s = STEPS[State.step];
-  $('stepNo').textContent = 'STEP ' + s.no;
+  $('stepNo').textContent = 'STEP ' + s.no + ' / ' + TOTAL_STEPS;
   $('stepName').textContent = s.name;
   const chips = $('chips');
   chips.innerHTML = '';
@@ -824,7 +1208,27 @@ function renderStep() {
     li.textContent = c;                       // 用 textContent，避免任何注入
     chips.appendChild(li);
   }
+  renderProgress();
   renderBody();
+}
+
+/* 进度条：让「走到第几步了」不用读字也看得出来。
+   纯装饰（外层 aria-hidden），准确的步骤信息由 stepNo/stepName 和播报负责，
+   所以不会让屏幕阅读器把同一件事念两遍。 */
+function renderProgress() {
+  const ol = $('progress');
+  if (!ol) return;
+  const now = STEPS[State.step].no;
+  if (ol.children.length !== TOTAL_STEPS) {
+    ol.innerHTML = '';
+    for (let i = 0; i < TOTAL_STEPS; i++) ol.appendChild(document.createElement('li'));
+  }
+  for (let i = 0; i < ol.children.length; i++) {
+    const n = i + 1;
+    ol.children[i].className = n < now ? 'done' : (n === now ? 'now' : '');
+  }
+  const txt = $('progressText');
+  if (txt) txt.textContent = now + ' / ' + TOTAL_STEPS;
 }
 
 function renderBody() {
@@ -1161,10 +1565,18 @@ function createOrderRemote() {
 /* ==========================================================================
    一句话进来的总入口
    ========================================================================== */
-function handleUtterance(raw) {
+function handleUtterance(raw, opts) {
+  const o = opts || {};
   const text = String(raw || '').trim();
   if (!text) return;
+  // 「你说」和「听到原文」是两件事，刻意分开显示：
+  //   听到原文 = 语音识别给的原话（可能是几个候选里更好的那个）
+  //   你说     = 页面最终按哪句话去理解的
+  // 两者不一致时用户一眼就能看出系统做了修正，而不是觉得它在瞎猜。
   setSaid('你说：' + escapeHtml(text) + '　<span class="sub">正在处理…</span>', { html: true });
+  // 走语音通道时，回显已由 handleAlternatives 写好（含「按哪一句理解」的说明），
+  // 这里不能覆盖；打字通道没有那一步，就照原样回显。
+  if (!o.fromSpeech) showHeard(text);
 
   if (!State.started) {
     if (/^(开始|开始吧|开始使用|启动|来吧|嗯|嗯开始|好|好的)$/.test(normalizeUtterance(text))) { begin(); return; }
@@ -1186,6 +1598,7 @@ function handleUtterance(raw) {
 
   const parsed = parseUtterance(text, {
     items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
+    pinyin: PY,
     storeCount: State.stores.length, inStoreStep: State.step === 'store'
   });
   dispatch(parsed, text);
@@ -1196,12 +1609,17 @@ State.resolveTie = function (text) {
   const qty = State.pendingTies.qty;
   const m = matchItems(text, ties.map(c => itemByCode(c)).filter(Boolean),
                        Object.fromEntries(Object.entries(DATA.aliases)
-                         .map(([k, v]) => [k, v.filter(c => ties.includes(c))])));
+                         .map(([k, v]) => [k, v.filter(c => ties.includes(c))])),
+                       PY);
   // 也接受「第一个 / 第二个」
   const pick = parseStorePick(text, ties.length);
   let code = m.best;
   if (pick) code = ties[pick - 1];
-  if (!code) { announce('没听清是哪一个。可以说名字，或者说「第一个」「第二个」。'); return false; }
+  if (!code) {
+    announce('没听清是哪一个' + (State.lastHeard ? '（我听到的是「' + State.lastHeard + '」）' : '')
+             + '。可以说名字，或者说「第一个」「第二个」。');
+    return false;
+  }
   State.pendingTies = null;
   addToCart(code, qty || 1);
   return true;
@@ -1259,8 +1677,13 @@ function dispatch(p, raw) {
       // 类目名也算一种说法：「汉堡」「饮品」
       if (State.step === 'browse' && speakCategory(raw)) return;
       if (State.step === 'store' && pickStoreByName(raw)) return;
-      announce('没听懂「' + raw + '」。你可以说「我能说什么」听一遍当前能用的说法。',
-               { alert: '没听懂' });
+      // 没听懂时**必须**把识别到的原话念出来。
+      // 否则用户无法区分「麦克风没听见」「听见了但识别错了」「识别对了但我没理解」——
+      // 这三种情况下该做的事完全不同（重说一遍 / 换个说法 / 换个说法），
+      // 而之前的版本只回一句「没听懂」，等于把判断责任推给了用户。
+      announce('我听到的是「' + raw + '」，但没认出是哪个。'
+               + '可以说得短一点，比如「巨无霸」「可乐」；也可以说「我能说什么」听一遍当前能用的说法。',
+               { alert: '没听懂：' + raw });
   }
 }
 
@@ -1315,7 +1738,7 @@ function pickStoreByName(text) {
   if (!q) return false;
   let best = -1, bestScore = 0, second = 0;
   State.stores.forEach((s, i) => {
-    const sc = storeScore(q, s.storeName);
+    const sc = storeScore(q, s.storeName, PY);
     if (sc > bestScore) { second = bestScore; bestScore = sc; best = i; }
     else if (sc > second) { second = sc; }
   });
@@ -1361,6 +1784,7 @@ function resetAll(msg) {
   State.pendingTies = null; State.batch = { category: null, offset: 0 };
   State.orderResult = null;
   State.step = State.store ? 'browse' : 'store';
+  showHeard('');
   renderStep();
   announce(msg || '已经清空购物车。');
 }
@@ -1630,8 +2054,18 @@ function runAudit() {
   for (const [label, node] of samples) {
     if (!node || seen.has(node)) continue;
     seen.add(node);
+    /* 过渡和动画进行中读到的颜色是「半路」的，不是最终状态。
+       这里的坑是真实的：主按钮从品牌黄过渡到深红的那 0.12 秒里，
+       文字已经是白的、背景还停在黄的——量出来 1.6:1，
+       而稳态（深红底白字）其实是达标的 7.6:1。
+       无头浏览器（--virtual-time-budget）里过渡时钟不走、永远停在起点，
+       这个假象会一直挂着。WCAG 对比度说的是稳定状态，
+       所以采样前临时关掉过渡和动画，量完恢复。 */
+    const prevTransition = node.style.transition, prevAnimation = node.style.animation;
+    node.style.transition = 'none'; node.style.animation = 'none';
     const fg = parseRgb(getComputedStyle(node).color);
     const bg = effectiveBackground(node);
+    node.style.transition = prevTransition; node.style.animation = prevAnimation;
     if (!fg || !bg) continue;
     const ratio = contrast(fg, bg);
     const ok = ratio >= 7;     // WCAG AAA 级正文要求
@@ -1719,6 +2153,10 @@ function init() {
   // 本地模式拉过门店后，默认就停在第 2 步让人选
   State.step = 'welcome';
 
+  // 展开拼音表（「音节 → 汉字串」→「字 → 音节」）。缺表不报错：
+  // 没有它页面照样能用，只是少了同音容错这一层。
+  PY = expandPinyin(DATA.pinyin);
+
   pickVoice();
   if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = pickVoice;
 
@@ -1792,9 +2230,10 @@ function init() {
 
   // 暴露给自动化测试：状态机、匹配器、渲染入口
   globalThis.__MCVOICE_APP__ = {
-    State, STEPS, handleUtterance, begin, runAudit, dispatch,
+    State, STEPS, TOTAL_STEPS, handleUtterance, begin, runAudit, dispatch,
     matchItems, parseUtterance, estimatePrice, itemByCode, speechSupport,
-    resetAll, chooseTakeWay, doQuote, goStores
+    resetAll, chooseTakeWay, doQuote, goStores,
+    interpret, handleAlternatives, showHeard, renderStep, parseScore, rankCandidates
   };
 
   // URL 带 ?audit=1 时自动跑一次自检，方便自动化验证
