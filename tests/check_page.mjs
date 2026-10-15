@@ -321,7 +321,9 @@ const REQUIRED_IDS = [
   'typeInput', 'sendBtn', 'body', 'chips', 'stepNo', 'stepName', 'said',
   'auditBtn', 'auditOut', 'speakOn', 'allowOrder', 'fontScale', 'fontScaleVal', 'fontReset',
   // 视觉改版新增：进度条 + 听到原文回显（少了它们，识别不准时用户没有任何抓手）
-  'progress', 'progressText', 'heard', 'heardLbl', 'heardVal', 'micNote'
+  'progress', 'progressText', 'heard', 'heardLbl', 'heardVal', 'micNote',
+  // 兼容性改版新增：实时预览（发送前先让用户确认理解对不对）+ 云端转写地址
+  'preview', 'asrEndpoint'
 ];
 const presentIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
 const missing = REQUIRED_IDS.filter((id) => !presentIds.has(id));
@@ -339,6 +341,57 @@ check('设置区有「允许创建订单」开关（不可逆动作的显式闸�
 check('开关默认未勾选（默认只算价，不建单）',
       !/id="allowOrder"[^>]*checked/.test(html));
 check('字号调节范围上限到 160%', /id="fontScale"[^>]*max="160"/.test(html));
+
+/* ==================== 8. 三步流程 ====================
+   从八步压到三步是本轮最重要的一次删减。这一组断言盯着「别再改回去」：
+   只要有人重新引入门店步骤、购物车步骤或单独的报价步骤，这里就该红。 */
+console.log('\n8. 三步流程');
+check('步骤定义只剩「开始 / 说单 / 核对 / 完成」，没有门店与购物车步骤',
+      /\border:\s*\{\s*no:\s*1/.test(html) && /\bconfirm:\s*\{\s*no:\s*2/.test(html)
+      && !/\bstore:\s*\{\s*no:/.test(html) && !/\bbrowse:\s*\{\s*no:/.test(html)
+      && !/\bcart:\s*\{\s*no:/.test(html) && !/\bprice:\s*\{\s*no:/.test(html)
+      && !/\bordered:\s*\{\s*no:/.test(html));
+check('总步数由 STEPS 自算（加一步不用改两处）',
+      /const TOTAL_STEPS = Math\.max\(/.test(html));
+check('门店自动选定，不必先做一道选择题',
+      /function autoPickStore\(\)/.test(html) && /const auto = autoPickStore\(\)/.test(html),
+      '自动选店是「过渡太长」的主要解法之一');
+check('「换门店」用 pickingStore 标志把门店列表临时铺开',
+      /pickingStore:\s*false/.test(html) && /State\.pickingStore = true/.test(html));
+check('「就这些」是独立的意图（说完了），和「就这样」（认可）分开',
+      /\['finish',/.test(html) && /就这些/.test(html));
+check('取餐方式默认堂食，说了才改',
+      /function defaultTakeWay\(/.test(html) && /State\.takeWay = defaultTakeWay\(q\)/.test(html));
+
+/* ==================== 9. 说话通道 ====================
+   这一组是「只能在 Chrome 用」那次返工的护栏。
+   任何人把 voiceChannel / openTypePad / micFallbackMsg 删掉，这里立刻红。 */
+console.log('\n9. 说话通道（微信 / 手机浏览器能不能用就看这一组）');
+check('三条通道都实现了：native / keyboard / cloud',
+      /function voiceChannel\(\)/.test(html) && /return 'native'/.test(html)
+      && /return 'cloud'/.test(html) && /return 'keyboard'/.test(html));
+check('检测微信内置浏览器 UA（微信里提示词完全不一样）',
+      /IS_WECHAT = \/MicroMessenger\/i\.test\(UA\)/.test(html));
+check('降级提示分环境给，微信里说的是「键盘上的麦克风」',
+      /function micFallbackMsg\(\)/.test(html) && /微信里用不了网页语音/.test(html));
+check('键盘通道会把焦点送到输入框（不 focus 就不会弹键盘）',
+      /function openTypePad\(\)/.test(html) && /input\.focus\(\)/.test(html));
+check('圆按钮的说明行随通道变化，不是写死的一句',
+      /function shortHint\(ch\)/.test(html));
+check('键盘通道下点圆按钮走 openTypePad，不去碰不存在的语音 API',
+      /if \(ch === 'keyboard'\) \{ openTypePad\(\); return; \}/.test(html));
+check('输入框带 enterkeyhint，手机键盘上直接显示「发送」键',
+      /enterkeyhint="send"/.test(html));
+check('云端转写是可插拔的：留空就完全不走这条路',
+      /const CloudASR = \{/.test(html) && /configured\(\)/.test(html) && /MediaRecorder/.test(html));
+check('云端转写地址可由用户填写并存在本地',
+      /id="asrEndpoint"/.test(html) && /localStorage/.test(html));
+check('边打边预览：输入时就解析并告诉用户「理解成了什么」',
+      /addEventListener\('input', \(\) => previewUtterance/.test(html));
+check('认不出来的说法会标红提示，不是静默通过',
+      /className = 'preview bad'/.test(html));
+check('「语音不可用」不再是一句死路提示，而是给出下一步动作',
+      !/这个浏览器的语音识别用不了/.test(html));
 
 /* ==================== 汇总 ==================== */
 console.log('');

@@ -79,17 +79,18 @@ window.addEventListener("load", function(){
     try {
       A.begin();
       log.push(["begin", A.State.step, A.State.started]);
-      log.push(["门店总数", A.State.stores.length, A.State.stores[0] && A.State.stores[0].storeCode,
-                A.State.stores[A.State.stores.length - 1] && A.State.stores[A.State.stores.length - 1].storeCode]);
+      // 门店不再是必须回答的一道题：begin 之后应当已经自动选定，且列表没有铺开
+      log.push(["自动选店", A.State.step, A.State.store && A.State.store.storeCode, A.State.pickingStore]);
+      o.storeAutoPicked = !!(A.State.store);
 
-      // 先试着选一家**没有菜单快照**的门店：必须被挡住并说明原因，
-      // 绝不能拿别家店的菜单价格替这一家点餐
+      // 说「换门店」才把列表铺开；此时序号才开始按门店解析
+      A.handleUtterance("换门店");
+      log.push(["换门店", A.State.pickingStore, A.State.step]);
+      // 选一家没有菜单快照的店：必须被挡住、不换过去
       A.handleUtterance("第一家");
-      log.push(["选无快照门店", A.State.step, A.State.store && A.State.store.storeCode]);
-
-      // 再用店名选快照覆盖的那家（演示库里是第 4 家，距离 671 米的麦当劳天府三街餐厅）
+      log.push(["选无快照门店", A.State.pickingStore, A.State.store && A.State.store.storeCode]);
       A.handleUtterance("麦当劳天府三街餐厅");
-      log.push(["按店名选门店", A.State.step, A.State.store && A.State.store.storeCode]);
+      log.push(["按店名选门店", A.State.pickingStore, A.State.store && A.State.store.storeCode]);
 
       A.handleUtterance("来一份巨无霸");
       log.push(["加购巨无霸", A.State.cart.length, A.State.cart[0] && A.State.cart[0].code, A.State.cart[0] && A.State.cart[0].qty]);
@@ -102,8 +103,28 @@ window.addEventListener("load", function(){
       o.heardText = (document.getElementById("heardVal") || {}).textContent || "";
       o.heardHidden = !!(document.getElementById("heard") || {}).hidden;
 
+      // 边打边预览：在按下发送之前就告诉用户「我理解成了什么」
+      var inp = document.getElementById("typeInput");
+      var pv = document.getElementById("preview");
+      inp.value = "巨无霸";
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      o.previewText = (pv || {}).textContent || "";
+      o.previewHidden = !!(pv || {}).hidden;
+      inp.value = "阿巴阿巴";
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      o.previewBadText = (pv || {}).textContent || "";
+      o.previewBadClass = (pv || {}).className || "";
+      inp.value = "";
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      o.previewCleared = !!(pv || {}).hidden;
+
+      // 说话通道：这台机器上跑的是哪一条，圆按钮和说明行分别说了什么
+      o.channel = A.voiceChannel();
+      o.micBtnText = (document.getElementById("micBtn") || {}).textContent || "";
+      o.micNoteText = (document.getElementById("micNote") || {}).textContent || "";
+
       // 多候选择优：模拟识别器给三个候选，第一名是错的
-      A.State.cart = []; A.State.step = "browse";
+      A.State.cart = []; A.State.step = "order";
       A.handleAlternatives([
         { text: "阿巴阿巴", conf: 0.91 },
         { text: "书条", conf: 0.42 },
@@ -120,33 +141,39 @@ window.addEventListener("load", function(){
       o.progressText = (document.getElementById("progressText") || {}).textContent || "";
 
       A.handleUtterance("再来两份薯条");
-      const last = A.State.cart[A.State.cart.length - 1];
+      var last = A.State.cart[A.State.cart.length - 1];
       log.push(["加购薯条x2", A.State.cart.length, last && last.qty]);
 
-      A.handleUtterance("算价");
+      // 「就这些」= 我说完了 → 直接进第 2 步算总价（不再经过购物车、报价两个中间步骤）
+      A.handleUtterance("就这些");
       await wait(400);
-      log.push(["算价", A.State.step, A.State.quoted && A.State.quoted.price, A.State.quoted && A.State.quoted.estimated]);
+      log.push(["就这些进确认", A.State.step, A.State.quoted && A.State.quoted.price,
+                A.State.quoted && A.State.quoted.estimated, A.State.takeWay]);
 
-      A.handleUtterance("堂食");
-      log.push(["取餐方式-开关关闭", A.State.step]);
-
-      // 打开下单开关，走一遍到「等待确认」
-      document.getElementById("allowOrder").checked = true;
+      // 取餐方式默认堂食；说「外带」当场改，并且仍然停在确认步骤
       A.handleUtterance("外带");
-      log.push(["取餐方式-开关打开", A.State.step, A.State.takeWay]);
+      log.push(["改外带", A.State.step, A.State.takeWay]);
 
+      // 下单开关关着时说「确认」：必须明确不建单，并留在确认步骤
+      A.handleUtterance("确认");
+      await wait(300);
+      log.push(["开关关闭说确认", A.State.step, !!A.State.orderResult, A.State.cart.length]);
+
+      // 打开下单开关再确认
+      document.getElementById("allowOrder").checked = true;
       A.handleUtterance("确认");
       await wait(400);
       log.push(["演示模式说确认", A.State.step, !!A.State.orderResult]);
 
+      // 第 3 步说「再点一单」要能重新开始
+      A.handleUtterance("再点一单");
+      log.push(["再点一单", A.State.step, A.State.cart.length]);
+
       // 歧义追问
-      A.State.step = "browse"; A.State.pendingTies = null;
+      A.State.pendingTies = null;
       A.handleUtterance("鸡腿堡");
       log.push(["歧义追问", !!A.State.pendingTies, A.State.pendingTies && A.State.pendingTies.ties.length]);
 
-      // 退回上一步 / 取消
-      A.handleUtterance("退回上一步");
-      log.push(["退回", A.State.step]);
       A.handleUtterance("取消");
       log.push(["取消后购物车", A.State.cart.length]);
 
@@ -182,7 +209,7 @@ window.addEventListener("load", function(){
 });
 </script>"""
 
-# 第 2 遍：抹掉语音识别能力，验证降级路径
+# 第 2 遍：抹掉语音识别能力 + 伪装成微信内置浏览器，验证降级路径
 NODEG_SPEECH = """<script>
 try {
   delete window.SpeechRecognition;
@@ -191,8 +218,15 @@ try {
   window.SpeechRecognition = undefined;
   window.webkitSpeechRecognition = undefined;
 }
+// 伪装成微信内置浏览器：这条路径必须走「唤起键盘、用输入法自带的麦克风说话」
+try {
+  Object.defineProperty(navigator, "userAgent", {
+    value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 "
+         + "(KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.49(0x18003132) NetType/WIFI",
+    configurable: true
+  });
+} catch (e) {}
 window.__noSpeech = true;
-window.__speechProbe = [];
 </script>"""
 
 NODEG_DRIVER = """<script>
@@ -209,22 +243,33 @@ window.addEventListener("load", function(){
     var wait = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
     try {
       o.support = A.speechSupport();
+      o.channel = A.voiceChannel();
+      o.isWechat = A.IS_WECHAT;
+      o.isMobile = A.IS_MOBILE;
+      o.fallbackMsg = A.micFallbackMsg();
+      o.shortHint = A.shortHint("keyboard");
+
       A.begin();
       log.push(["开始", A.State.step, A.State.started]);
       await wait(120);
-      // 语音识别不可用时，开始流程必须给出明确提示而不是静默失败
-      var alertText = document.getElementById("alert").textContent || "";
-      var saidText = document.getElementById("said").textContent || "";
-      o.alertText = alertText.slice(0, 200);
-      o.saidText = saidText.replace(/\\s+/g," ").slice(0, 200);
+      // 语音走不通时，第一句必须是「怎么才能说话」，而不是静默失败
+      o.alertText = (document.getElementById("alert").textContent || "").slice(0, 240);
+      o.saidText = (document.getElementById("said").textContent || "").replace(/\\s+/g," ").slice(0, 240);
+      o.micNoteText = (document.getElementById("micNote") || {}).textContent || "";
+      o.micBtnText = (document.getElementById("micBtn") || {}).textContent || "";
 
-      // 打字兜底：整条流程照样要能走完
-      A.handleUtterance("麦当劳天府三街餐厅");
+      // 点圆按钮：键盘通道下必须把焦点送到输入框，而不是报一句「语音不可用」
+      document.getElementById("micBtn").click();
+      await wait(60);
+      o.focusedIsInput = (document.activeElement && document.activeElement.id) === "typeInput";
+      o.noteAfterClick = (document.getElementById("micNote") || {}).textContent || "";
+
+      // 打字/输入法走完整条流程：一句说完 → 直接算总价
       A.handleUtterance("来一份巨无霸");
       A.handleUtterance("一杯可乐");
-      A.handleUtterance("算价");
+      A.handleUtterance("就这些");
       await wait(400);
-      log.push(["打字走完到算价", A.State.step, A.State.cart.length, A.State.quoted && A.State.quoted.price]);
+      log.push(["降级路径走完到确认", A.State.step, A.State.cart.length, A.State.quoted && A.State.quoted.price]);
       o.log = log;
       __done(o);
     } catch (e) { o.log = log; o.error = String(e && e.message); __done(o); }
@@ -312,13 +357,19 @@ def main() -> int:
         check("流程执行没有抛错", False, res.get("error") + " | " + str(res.get("stack", ""))[:160])
 
     steps = {row[0]: row for row in (res.get("log") or [])}
-    check("开始后进入门店步骤", rows_ok(steps, "begin", 1, "store"))
-    check("选了一家没有菜单快照的门店时被挡住（仍停在门店步骤、没有选中）",
-          rows_ok(steps, "选无快照门店", 1, "store")
-          and (steps.get("选无快照门店") or [None, None, None])[2] is None,
+    check("开始后直接进入第 1 步「说单」（不再先问门店）",
+          rows_ok(steps, "begin", 1, "order"), str(steps.get("begin")))
+    check("门店自动选定、列表不铺开（不必先做一道选择题）",
+          res.get("storeAutoPicked") is True
+          and (steps.get("自动选店") or [None, None, None, None])[3] is False,
+          str(steps.get("自动选店")))
+    check("说「换门店」才铺开门店列表，此时序号才按门店解析",
+          rows_ok(steps, "换门店", 1, True), str(steps.get("换门店")))
+    check("选了一家没有菜单快照的门店时被挡住（没有换过去）",
+          (steps.get("选无快照门店") or [None, None, None])[2] == "3450121",
           str(steps.get("选无快照门店")))
-    check("按店名「麦当劳天府三街餐厅」能选中快照覆盖的门店 3450121",
-          rows_ok(steps, "按店名选门店", 1, "browse")
+    check("按店名能换到快照覆盖的门店 3450121，并收起列表",
+          rows_ok(steps, "按店名选门店", 1, False)
           and (steps.get("按店名选门店") or [None, None, None])[2] == "3450121",
           str(steps.get("按店名选门店")))
     check("「来一份巨无霸」加购 1 件巨无霸（1100）",
@@ -338,30 +389,53 @@ def main() -> int:
           (steps.get("多候选择优") or [None, None])[1] == 1
           and (steps.get("多候选择优") or [None, None, None])[2] == "4810",
           str(steps.get("多候选择优")))
-    check("进度条按总步数铺满且只有一格是「当前」",
-          res.get("progressCells") == res.get("TOTAL") and res.get("progressNow") == 1,
-          f"cells={res.get('progressCells')} now={res.get('progressNow')} text={res.get('progressText')!r}")
+    check("边打边预览：输入商品名时立刻显示「听懂了：巨无霸」",
+          res.get("previewHidden") is False and "巨无霸" in (res.get("previewText") or ""),
+          f"hidden={res.get('previewHidden')} text={res.get('previewText')!r}")
+    check("认不出来的说法会被标红提示，而不是静默通过",
+          "bad" in (res.get("previewBadClass") or "") and "认不出来" in (res.get("previewBadText") or ""),
+          f"class={res.get('previewBadClass')!r} text={res.get('previewBadText')!r}")
+    check("清空输入框后预览也跟着收起", res.get("previewCleared") is True,
+          str(res.get("previewCleared")))
+    check("进度条按三步铺满且只有一格是「当前」",
+          res.get("progressCells") == res.get("TOTAL") == 3 and res.get("progressNow") == 1,
+          f"cells={res.get('progressCells')} total={res.get('TOTAL')} now={res.get('progressNow')}")
+
+    print("\n  说话通道（决定微信 / 手机浏览器能不能用）")
+    check("页面能报出当前走的是哪条通道",
+          res.get("channel") in ("native", "keyboard", "cloud"), str(res.get("channel")))
+    check("圆按钮文案随通道变化，不是写死的「开始说话」",
+          bool(res.get("micBtnText")), repr(res.get("micBtnText")))
+    check("说明行写清了「这个环境里该怎么说话」",
+          bool(res.get("micNoteText")), repr(res.get("micNoteText")))
 
     check("「再来两份薯条」的数量解析正确（2 份）",
           (steps.get("加购薯条x2") or [None, None])[2] == 2, str(steps.get("加购薯条x2")))
-    check("「算价」进入报价步骤且给出金额",
-          rows_ok(steps, "算价", 1, "price") and (steps.get("算价") or [None, None, None])[2] > 0,
-          str(steps.get("算价")))
+    check("「就这些」= 说完了，直接进第 2 步算总价（跳过购物车与报价两个中间步骤）",
+          rows_ok(steps, "就这些进确认", 1, "confirm") and (steps.get("就这些进确认") or [None, None, None])[2] > 0,
+          str(steps.get("就这些进确认")))
     check("演示模式的报价被标记为 estimated（不会冒充正式报价）",
-          (steps.get("算价") or [None, None, None, None])[3] is True, str(steps.get("算价")))
-    check("下单开关关闭时说「堂食」流程直接结束、不产生订单",
-          rows_ok(steps, "取餐方式-开关关闭", 1, "done"), str(steps.get("取餐方式-开关关闭")))
-    check("开启下单开关后说「外带」进入下单确认步骤",
-          rows_ok(steps, "取餐方式-开关打开", 1, "confirm") and (steps.get("取餐方式-开关打开") or [None, None])[2] == "take-in-store",
-          str(steps.get("取餐方式-开关打开")))
+          (steps.get("就这些进确认") or [None, None, None, None])[3] is True, str(steps.get("就这些进确认")))
+    check("取餐方式默认堂食（同样不必先做一道选择题）",
+          (steps.get("就这些进确认") or [None, None, None, None, None])[4] == "eat-in",
+          str(steps.get("就这些进确认")))
+    check("说「外带」当场改取餐方式，且仍然停在确认步骤",
+          rows_ok(steps, "改外带", 1, "confirm") and (steps.get("改外带") or [None, None])[2] == "take-in-store",
+          str(steps.get("改外带")))
+    check("下单开关关闭时说「确认」：明确不建单，购物车原样保留",
+          rows_ok(steps, "开关关闭说确认", 1, "confirm")
+          and (steps.get("开关关闭说确认") or [None, None, None])[2] is False
+          and (steps.get("开关关闭说确认") or [None, None, None, None])[3] > 0,
+          str(steps.get("开关关闭说确认")))
     check("演示模式下说「确认」流程收尾且绝不产生订单",
           rows_ok(steps, "演示模式说确认", 1, "done")
           and (steps.get("演示模式说确认") or [None, None, None])[2] is False,
           str(steps.get("演示模式说确认")))
+    check("第 3 步说「再点一单」能重新开始并清空",
+          rows_ok(steps, "再点一单", 1, "order") and (steps.get("再点一单") or [None, None])[2] == 0,
+          str(steps.get("再点一单")))
     check("说不清楚的「鸡腿堡」会触发歧义追问",
           (steps.get("歧义追问") or [None, False])[1] is True, str(steps.get("歧义追问")))
-    check("「退回上一步」从点餐退回门店步骤",
-          rows_ok(steps, "退回", 1, "store"), str(steps.get("退回")))
     check("「取消」能清空购物车", (steps.get("取消后购物车") or [None, -1])[1] == 0,
           str(steps.get("取消后购物车")))
 
@@ -397,14 +471,27 @@ def main() -> int:
             check("降级路径没有抛错", False, res2["error"])
         check("页面正确识别出「语音识别不可用」",
               (res2.get("support") or {}).get("recognition") is False, str(res2.get("support")))
-        check("给出明确的降级提示（提示用户改用打字）",
-              ("打字" in (res2.get("saidText") or "")) or ("输入框" in (res2.get("alertText") or ""))
-              or ("打字" in (res2.get("alertText") or "")),
-              f"said={res2.get('saidText','')[:80]} | alert={res2.get('alertText','')[:80]}")
+        check("微信内置浏览器被认出来，并自动走键盘通道",
+              res2.get("isWechat") is True and res2.get("channel") == "keyboard",
+              f"wechat={res2.get('isWechat')} mobile={res2.get('isMobile')} channel={res2.get('channel')}")
+        check("提示话术是针对微信说的，而不是笼统一句「语音不可用」",
+              "微信" in (res2.get("fallbackMsg") or "") and "麦克风" in (res2.get("fallbackMsg") or ""),
+              repr((res2.get("fallbackMsg") or "")[:90]))
+        check("圆按钮说明行告诉用户「按键盘上的麦克风说话」",
+              "麦克风" in (res2.get("shortHint") or ""), repr(res2.get("shortHint")))
+        check("点圆按钮后焦点落在输入框（这一步决定系统键盘会不会弹出来）",
+              res2.get("focusedIsInput") is True, str(res2.get("focusedIsInput")))
+        check("点圆按钮不会只丢一句「不可用」，而是给出可执行的下一步",
+              "不可用" not in (res2.get("noteAfterClick") or "")
+              and "麦克风" in (res2.get("noteAfterClick") or ""),
+              repr(res2.get("noteAfterClick")))
+        check("圆按钮文案在键盘通道下不谎称能直接录音",
+              (res2.get("micBtnText") or "") != "", repr(res2.get("micBtnText")))
         st = {row[0]: row for row in (res2.get("log") or [])}
-        check("打字输入照样能走完流程到报价",
-              rows_ok(st, "打字走完到算价", 1, "price") and (st.get("打字走完到算价") or [None, None, None, None])[3] > 0,
-              str(st.get("打字走完到算价")))
+        check("这条通道下照样能说完一整单并算出总价",
+              rows_ok(st, "降级路径走完到确认", 1, "confirm")
+              and (st.get("降级路径走完到确认") or [None, None, None, None])[3] > 0,
+              str(st.get("降级路径走完到确认")))
 
     print()
     if failures:

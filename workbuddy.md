@@ -131,12 +131,16 @@ DNS rebinding、跨站 Origin 拒绝、OPTIONS 一律 403、每次启动随机�
 | 圆形麦克风渲染成圆角方块 | `.mic` 与 `.btn` 特异性相同（0,1,0），`.btn` 定义在后把 `border-radius:50%` 盖掉 | 用 `.btn.mic`（0,2,0）并把整块挪到 `.btn` 家族之后；有截图对照的断言守着 |
 | 无头浏览器里自检报「主按钮 1.6:1」假警报 | `.btn` 有 `transition:background .12s`，`--virtual-time-budget` 下过渡时钟不走、冻结在起点，白字配上了过渡前的黄底 | 审计采样前临时关掉过渡与动画——WCAG 对比度说的是稳定状态，不是半路的颜色 |
 
+| 「只能在 Google 浏览器用」 | 依赖 `webkitSpeechRecognition`——微信内置浏览器和多数手机自带浏览器**没有这个 API**，国内安卓 Chrome 有 API 也没有识别服务 | 三条通道：native（桌面 Chrome）／keyboard（点按钮聚焦输入框、用系统输入法的麦克风，`focus()` 必须在点击同步路径里）／cloud（可选的录音上传转写） |
+| 八步流程被评「过渡太长、沟通难」 | 每步先念一段引导，用户说四五轮才能点完一单；门店、取餐方式其实不需要每个人都回答 | 压成三步 + 把两道题改成默认值（门店自动选、默认堂食）；点单过程每加一件就念小计，「就这些」直接进核对 |
+| 无头 Chrome 截手机图，390px 怎么设都变成 485px | headless Chrome 有 **500px 最小窗宽**，`--window-size=390` 被钳制 | 用 390px 宽的 `<iframe>` 装主页面再截外层——iframe 的视口就是 390，媒体查询按它计算 |
+
 ## 验证链
 
-四条链，共 220+ 项断言，改任何东西之后都要跑：
+四条链，共 270+ 项断言，改任何东西之后都要跑：
 
 ```bash
-node tests/check_page.mjs          # 页面结构自检（84 项）：占位符/语法/数据自洽/无障碍骨架/交互节点
+node tests/check_page.mjs          # 页面结构自检（102 项）：占位符/语法/数据自洽/无障碍骨架/三步流程/说话通道
 node tests/test_voice.mjs          # 语音理解核心（107 项）：真实菜单 ×「人真的会这么说」
 python tests/test_serve.py         # 本地代理安全闸门（18 项）
 python tests/browser_check.py      # 无头浏览器两遍：全流程驱动 + 内置自检 + axe 审计 + 降级路径

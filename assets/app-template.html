@@ -149,6 +149,34 @@ h3{font-size:1.02rem; margin:1.5rem 0 .6rem; color:var(--ink); font-weight:700}
 .btn.mic[aria-pressed="true"]{animation:micPulse 1.8s ease-out infinite}
 .mic-note{text-align:center; color:var(--muted); font-size:.9rem; margin:.25rem 0 0}
 
+/* ---- 输入条：微信 / 手机浏览器里的主入口 ----
+   这些环境没有网页语音识别，所以输入框不是「备选」，而是唯一能说话的地方。
+   因此它必须够大、够显眼，并且和上面那个圆按钮在视觉上连成一组。 */
+.typebar{display:flex; gap:.6rem; align-items:stretch; margin:1.1rem 0 .4rem}
+.typebar input{flex:1 1 auto; min-width:0; min-height:3.4rem; font-size:1.05rem;
+  padding:.7rem .9rem; border:3px solid var(--line-strong); border-radius:var(--radius-sm);
+  background:var(--card); color:var(--ink)}
+.typebar input:focus{outline:none; border-color:var(--ink); box-shadow:var(--ring)}
+.typebar .btn{flex:0 0 auto; white-space:nowrap}
+
+/* 边打边显示「我理解成了什么」 */
+.preview{margin:.1rem 0 .8rem; font-size:.95rem; color:var(--ink); line-height:1.5;
+  background:var(--panel-2); border-left:5px solid var(--brand); border-radius:6px; padding:.5rem .75rem}
+.preview.bad{background:#fdeceb; border-left-color:var(--accent)}
+.preview .hit{font-weight:700}
+
+/* 门店条：门店平时不出现，这里只是把「现在选的是哪家」摆在明处 */
+.store-bar{display:flex; align-items:baseline; gap:.45rem; flex-wrap:wrap;
+  margin:0 0 .9rem; padding:.6rem .85rem; background:var(--panel);
+  border:1px solid var(--line); border-radius:var(--radius-sm)}
+.store-bar .lbl{font-size:.82rem; color:var(--muted); letter-spacing:.1em}
+@media (max-width:420px){
+  .brand{flex-wrap:wrap}
+  .brand span{flex-basis:100%; margin-left:3rem; letter-spacing:.18em}
+  .typebar{flex-wrap:wrap}
+  .typebar .btn{flex:1 1 100%}
+}
+
 .hint{margin:1.25rem 0 0; padding:.9rem 1.1rem; background:var(--panel);
   border:1px solid var(--line); border-left:5px solid var(--brand);
   border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:.95rem}
@@ -182,6 +210,10 @@ ol.list li .idx{min-width:2rem; font-weight:700; color:var(--muted)}
 /* 打字兜底：语音不可用或环境嘈杂时必须还能用 */
 .field{display:block; margin-top:1rem}
 .field span{display:block; font-weight:700; margin-bottom:.35rem}
+.field input{width:100%; min-height:3.2rem; font-size:1rem; padding:.65rem .85rem;
+  border:3px solid var(--line-strong); border-radius:var(--radius-sm);
+  background:var(--card); color:var(--ink)}
+.field input:focus{outline:none; border-color:var(--ink); box-shadow:var(--ring)}
 input[type=text], input[type=password], input[type=search]{
   font:inherit; width:100%; padding:.7rem .9rem; border:2px solid var(--line-strong);
   border-radius:var(--radius-sm); background:var(--card); color:var(--ink); min-height:3.25rem}
@@ -241,8 +273,10 @@ footer.site p{margin:.45rem 0}
     <b>麦声 · McVoice</b><span>VOICE ORDERING</span>
   </p>
   <h1>用说的，点麦当劳</h1>
-  <p class="lede">这份页面为视障用户设计：全程可以不看屏幕，用语音完成「选门店 → 点餐 → 确认 → 算价 → 下单」。
-  也可以完全用键盘操作。所有门店、菜单与价格都来自麦当劳 MCP 的真实返回。</p>
+  <p class="lede">这份页面为视障用户设计：全程可以不看屏幕，用语音完成点餐。
+  只有三步——<strong>说单 → 核对总价 → 下单</strong>，门店自动选好，不必先做选择题。
+  在微信、手机自带浏览器里也能用：点圆按钮唤起键盘，用输入法自带的麦克风说话。
+  所有门店、菜单与价格都来自麦当劳 MCP 的真实返回。</p>
 </header>
 
 <main id="main">
@@ -276,27 +310,33 @@ footer.site p{margin:.45rem 0}
     <p id="alert" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></p>
 
     <div class="mic-row">
-      <button type="button" class="btn mic" id="micBtn" aria-pressed="false">开始使用</button>
+      <button type="button" class="btn mic" id="micBtn" aria-pressed="false">开始点餐</button>
     </div>
     <p class="mic-note" id="micNote">按一下开始，之后随时可以按它开关说话</p>
 
+    <!-- 输入条：始终可用。
+         有网页语音识别的浏览器（桌面 Chrome / Edge）里它是补充——环境太吵时说不了话；
+         微信、手机自带浏览器里它就是唯一入口：点上面那个圆按钮会把焦点送到这里、
+         唤起系统键盘，用输入法自带的麦克风说话。
+         做成「一组」而不是分成两块，是因为它们对用户来说是同一个动作：开口说想吃什么。 -->
+    <div class="typebar">
+      <label class="sr-only" for="typeInput">说出或输入你想点的东西</label>
+      <input type="text" id="typeInput" autocomplete="off" autocapitalize="off"
+             enterkeyhint="send" placeholder="说或打字：一份巨无霸，一杯可乐">
+      <button type="button" class="btn btn-accent" id="sendBtn">发送</button>
+    </div>
+    <!-- 边打边显示「我理解成了什么」：语音最容易听错的是商品名，
+         在发送之前就把理解结果摆出来，用户才有机会改。 -->
+    <p class="preview" id="preview" hidden></p>
+
     <div class="btn-row">
       <button type="button" class="btn" id="repeatBtn">再说一遍</button>
-      <button type="button" class="btn" id="backBtn">退回上一步</button>
+      <button type="button" class="btn" id="backBtn">上一步</button>
       <button type="button" class="btn" id="helpBtn">我能说什么</button>
     </div>
 
     <h3>可以这样说</h3>
-    <ul class="chips" id="chips"><li>开始使用后这里会列出当前步骤能说的话</li></ul>
-
-    <h3>也可以打字</h3>
-    <label class="field" for="typeInput">
-      <span>把想说的话打在这里（语音不可用、或环境太吵时用）</span>
-      <input type="text" id="typeInput" autocomplete="off" placeholder="例如：来一份巨无霸和一杯可乐">
-    </label>
-    <div class="btn-row">
-      <button type="button" class="btn btn-accent" id="sendBtn">发送这句话</button>
-    </div>
+    <ul class="chips" id="chips"><li>开始之后这里会列出当前步骤能说的话</li></ul>
   </section>
 
   <!-- ================= 内容区：随步骤变化 ================= -->
@@ -343,6 +383,16 @@ footer.site p{margin:.45rem 0}
       <output id="fontScaleVal" class="mono">100%</output>
       <button type="button" class="btn" id="fontReset">恢复默认</button>
     </div>
+
+    <h3>云端语音识别（可选）</h3>
+    <p class="sub">网页自带的语音识别在微信、手机自带浏览器里<strong>没有</strong>，本页因此默认改用
+    键盘上的麦克风。如果你有一个转写接口（比如用云函数包一层腾讯云一句话识别），把地址填在下面，
+    圆按钮就会变成「按一下开始录音、说完再按一下」，任何浏览器都能用。留空表示不启用。</p>
+    <label class="field" for="asrEndpoint">
+      <span>转写接口地址（留空表示不用）</span>
+      <input type="url" id="asrEndpoint" autocomplete="off"
+             placeholder="https://你的服务/transcribe">
+    </label>
 
     <h3>本地模式（用你自己的账号下单）</h3>
     <p class="sub">上面那份菜单是我的账号采样到的快照。要让页面跑在你自己的门店和账号上，
@@ -729,18 +779,22 @@ function matchItems(query, items, aliases, table) {
 /* 把一句话解析成结构化的意图。规则优先、可预测——
    点餐这种「说错一句可能多花钱」的场景，不适合把理解交给概率模型。 */
 const INTENTS = [
-  ['start',    /^(开始|开始吧|开始使用|启动|来吧|嗯开始)$/],
+  ['start',    /^(开始|开始吧|开始使用|开始点餐|启动|来吧|嗯开始)$/],
   ['stop',     /^(停|停止|别说了|安静|闭嘴|停一下|暂停)$/],
   ['help',     /(能说什么|会什么|帮助|怎么用|有什么指令|说什么)/],
   ['repeat',   /(再说一遍|重复一遍|再说一次|没听清|没听见|重念)/],
   ['back',     /(退回|上一步|返回|上一个|回到上一步|撤销刚才)/],
   ['cancel',   /^(取消|算了|不要了|重来|重新开始|清空|全部取消)$/],
+  ['again',    /^(再点一单|再来一单|重新点一单|重新来一单|再点一次|继续点单)$/],
   ['affirm',   /^(确认|是|对|对的|好的|好|嗯|可以|没问题|就这样)$/],
   ['deny',     /^(不是|不对|不要|不用|别|否|再想想)$/],
   ['menu',     /(菜单|有什么吃的|有什么卖|念一下菜单|看菜单|有什么汉堡|有什么喝的|有什么饮品|有什么小食|列一下)/],
   ['frequent', /(我的常点|常点的|老样子|上次那个|我常点)/],
   ['order',    /(确认下单|下单|提交订单|拍下|结账下单)/],
   ['price',    /(算价|多少钱|结账|买单|算一下钱|一共多少|报价|算账)/],
+  // 「我说完了」——把它和 affirm 分开，是因为两者在点单步骤里的含义完全不同：
+  // 说「就这样」是「认可当前这一件」，说「就这些」是「我点完了，去算钱」。
+  ['finish',   /^(就这些|就这样吧|点完了|都点好了|没别的了|这些够了|够了|点完|完了|好了|行了)$/],
   ['mycart',   /(购物车|我点了什么|都点了什么|清单|看看点了什么)/],
   ['continue', /^(继续|接着说|往下念|还有吗|下一个)$/],
   ['takeway_eatin',    /(堂食|在店里吃|店内用|店里吃)/],
@@ -899,30 +953,32 @@ globalThis.__MCVOICE__ = {
 /* ==========================================================================
    语音状态机。每一步都明确回答三个问题：现在在哪、能说什么、说完去哪。
    ========================================================================== */
+/* --------------------------------------------------------------------------
+   三步流程
+
+   原来有八步（欢迎→门店→点餐→购物车→报价→确认→下单→完成），每一步先念一段引导。
+   用户平均要说四五轮才能走完一单，而对着一个已经知道自己要什么的视障用户，
+   这不是帮助而是路障——他真正想说的话可能只有一句「一份巨无霸一杯可乐」。
+
+   现在只有三步：
+     1 说单  想吃什么直接说，可以一口气说完好几样，也可以一件件加，随时听得见小计。
+             门店自动选好，不必先做一道选择题；要换店说「换门店」。
+     2 核对  报总价与取餐方式，说「确认」就下单；想改就直接说「再加一杯可乐」。
+     3 完成  只有真的下单才会走到这里。
+   -------------------------------------------------------------------------- */
 const STEPS = {
-  welcome: { no: 1, name: '准备开始',
-    say: '欢迎使用麦声。按「开始使用」或按回车键，我们就开始点餐。',
-    chips: ['开始使用', '我能说什么'] },
-  store:   { no: 2, name: '选择门店',
-    say: '先说去哪家店。可以念门店的序号，比如说「第一家」，也可以说店名里的字。',
-    chips: ['第一家', '麦当劳天府三街', '附近有什么店'] },
-  browse:  { no: 3, name: '点餐',
-    say: '说你想吃什么就行，比如「来一份巨无霸和一杯可乐」。也可以说「菜单」让我把类目念一遍。',
-    chips: ['来一份巨无霸', '一杯可乐', '菜单', '算价', '我的常点'] },
-  cart:    { no: 4, name: '确认购物车',
-    say: '我念一遍你点的东西。要改就说「再加一份可乐」或者「不要薯条了」；没问题就说「算价」。',
-    chips: ['算价', '再加一份可乐', '不要薯条了', '退回上一步'] },
-  price:   { no: 5, name: '报价与取餐方式',
-    say: '这是你的报价。接下来选取餐方式：说「堂食」或者「外带」。',
-    chips: ['堂食', '外带', '我不想点了', '退回上一步'] },
-  confirm: { no: 6, name: '下单前确认',
-    say: '最后确认一次：真的要创建这个订单吗？说「确认」我就下单，说「不是」我就退回去。',
-    chips: ['确认', '不是', '退回上一步'] },
-  ordered: { no: 7, name: '订单已创建',
-    say: '订单已经创建。请用手机扫码，或者打开麦当劳 App 完成支付。',
-    chips: ['重新点一单'] },
-  done:    { no: 8, name: '完成',
-    say: '这一单到这里就结束了。', chips: ['重新点一单'] }
+  welcome: { no: 1, name: '开始',
+    say: '按「开始点餐」，然后直接说想吃什么。',
+    chips: ['开始点餐', '我能说什么'] },
+  order:   { no: 1, name: '说你要什么',
+    say: '想吃什么直接说，可以一句话说完好几样。说「就这些」我就算总价。',
+    chips: ['来一份巨无霸', '加一杯可乐', '不要薯条了', '就这些', '换门店'] },
+  confirm: { no: 2, name: '核对并下单',
+    say: '核对一下总价，说「确认」就下单；想改就直接说「再加一份可乐」。',
+    chips: ['确认', '外带', '再加一份薯条', '取消'] },
+  done:    { no: 3, name: '完成',
+    say: '这一单结束了。',
+    chips: ['再点一单'] }
 };
 
 /* 总步数从 STEPS 自己算出来，加一步就不用改两处 */
@@ -937,6 +993,7 @@ const State = {
   takeWay: null,
   batch: { category: null, offset: 0 },
   pendingTies: null, // 待消歧的候选
+  pickingStore: false, // 说「换门店」时为真，此时门店列表铺开、序号/店名按门店解析
   orderResult: null,
   lastHeard: '',     // 最近一次识别到的原话（屏幕上回显 + 没听懂时念出来）
   started: false
@@ -993,18 +1050,54 @@ function announce(text, opts) {
 }
 
 /* ==========================================================================
-   语音识别
+   说话通道：三条路，按用户所处的环境自动选
+
+   为什么必须有三条：网页原生语音识别（SpeechRecognition / webkitSpeechRecognition）
+   只在很窄的环境里真正可用——桌面版 Chrome / Edge，以及部分国外环境的 Safari。
+   微信内置浏览器、绝大多数手机自带浏览器**根本没有这个 API**；国内的安卓 Chrome
+   也因为没有可用的识别服务而失败。所以「按一下就能连续说话」这条路，
+   对中国用户的手机基本等于不存在——这正是「只有 Google 浏览器能用」的原因。
+
+     native   有原生 API：一键连续说话（桌面 Chrome / Edge）
+     keyboard 没有原生 API（微信、手机自带浏览器）：点圆按钮 → 唤起系统键盘 →
+              用输入法自带的麦克风说话。手机输入法的中文识别是厂商专门优化过的，
+              通常比网页识别更准，而且每家浏览器都能用。
+     cloud    页面配了云端转写地址：录音上传转写，任何浏览器都能用（见设置）。
    ========================================================================== */
 const SR_CTOR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const UA = navigator.userAgent || '';
+const IS_WECHAT = /MicroMessenger/i.test(UA);
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(UA);
+
 let recog = null, listening = false, wantListen = false, micBlocked = false;
 let micUnavailableMsg = '';
 // 连续自动重启的次数：用来在异常情况（浏览器立刻又结束）下退避，避免空转
 let restarts = 0;
 
-/* 语音能力不可用时的统一说法。抽成常量是因为它要在两个地方出现：
-   用户点麦克风时，以及流程开始时——两处必须说同一件事。 */
-const NO_MIC_MSG = '这个浏览器的语音识别用不了。你可以直接在下面的输入框里打字，'
-                 + '功能完全一样，每一步也照样会念出来。';
+/* 语音能力不可用时的说法。分环境说——不同环境的下一步动作不一样：
+   微信里要让用户知道「键盘上的麦克风一样好用」，桌面浏览器则只要说明可以打字。 */
+function micFallbackMsg() {
+  if (CloudASR.configured()) {
+    return '按一下上面的圆按钮开始录音，说完再按一下，我把它发给云端识别。';
+  }
+  if (IS_WECHAT) {
+    return '微信里用不了网页语音，但手机键盘上的麦克风是一样的：'
+         + '点上面的圆按钮，键盘弹出来后按键盘上的麦克风说话，说完按回车。';
+  }
+  if (IS_MOBILE) {
+    return '这个浏览器没有网页语音识别。点上面的圆按钮，'
+         + '键盘弹出来后按键盘上的麦克风说话，说完按回车。';
+  }
+  return '这个浏览器没有可用的网页语音识别。点上面的圆按钮唤起键盘，'
+       + '或用输入法自带的麦克风说话；也可以直接打字，功能完全一样。';
+}
+
+/* 当前该走哪条通道。 */
+function voiceChannel() {
+  if (SR_CTOR) return 'native';
+  if (CloudASR.configured()) return 'cloud';
+  return 'keyboard';
+}
 
 function speechSupport() {
   return {
@@ -1012,9 +1105,97 @@ function speechSupport() {
     synthesis: 'speechSynthesis' in window,
     // 浏览器只在安全上下文（https 或 localhost）里给麦克风权限
     secure: window.isSecureContext !== false,
-    media: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    media: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+    channel: voiceChannel(),
+    wechat: IS_WECHAT,
+    mobile: IS_MOBILE
   };
 }
+
+/* 圆按钮下面那一行：用一句话说清这个环境里该怎么说话。
+   这是整个页面最该被读到的一句——它决定了用户是按一下就能说，还是要先唤键盘。 */
+function shortHint(ch) {
+  if (ch === 'native') return '按一下开始说话，可以一直说';
+  if (ch === 'cloud')  return '按一下开始录音，说完再按一下';
+  if (IS_WECHAT) return '点这里 → 键盘弹出后，按键盘上的麦克风说话';
+  return '点这里 → 用键盘上的麦克风说话，或直接打字';
+}
+
+/* keyboard 通道的主入口：把用户送到输入框，并把系统键盘唤起来。
+
+   刻意不做遮罩层——遮罩在屏幕阅读器里会变成一个需要额外关闭的东西，反而多一步。
+   直接 focus 输入框、把提示写进常驻的说明行，屏幕阅读器会把它们一起念出来。
+   focus() 必须在点击事件的同步路径里调用，否则移动端不会弹键盘。 */
+function openTypePad() {
+  const input = $('typeInput');
+  if (!input) return;
+  try { input.focus(); } catch (e) { /* 无所谓 */ }
+  const tip = IS_MOBILE
+    ? '键盘弹出来了，按键盘上的麦克风说想吃什么，说完按回车。'
+    : '输入框已经聚焦，用输入法的麦克风说话，或者直接打字，然后按回车。';
+  const note = $('micNote');
+  if (note) note.textContent = shortHint('keyboard');
+  announce(tip);
+}
+
+/* ---- 云端转写（可选增强，默认关闭） ----
+
+   页面是纯静态的，没有内置的语音转写服务，所以这里不预置任何地址：
+   在「设置」里填一个你自己的转写接口地址就自动启用，留空则完全不走这条路。
+
+   接口约定（最小形态，方便用云函数包一层腾讯云一句话识别 / 讯飞等）：
+     POST <endpoint>              Content-Type: audio/webm
+     body: 录音二进制             返回: {"text":"识别结果"}  或 {"result":{"text":"…"}}   */
+const CloudASR = {
+  endpoint: '',
+  chunks: [], rec: null, stream: null, recording: false,
+  configured() {
+    return !!this.endpoint && !!window.MediaRecorder
+        && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  },
+  start() {
+    if (!this.configured() || this.recording) return false;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      this.stream = stream;
+      this.chunks = [];
+      this.rec = new MediaRecorder(stream);
+      this.rec.ondataavailable = (e) => { if (e.data && e.data.size) this.chunks.push(e.data); };
+      this.rec.onstop = () => {
+        try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+        this.stream = null;
+        this.upload(new Blob(this.chunks, { type: 'audio/webm' }));
+      };
+      this.rec.start();
+      this.recording = true;
+      syncMicButton();
+      announce('开始录音，说完再按一下按钮。');
+    }).catch(() => {
+      this.recording = false; syncMicButton();
+      announce('拿不到麦克风权限。可以点圆按钮唤出键盘，用输入法的麦克风，或者直接打字。',
+               { alert: '麦克风权限被拒绝' });
+    });
+    return true;
+  },
+  stop() {
+    if (this.rec && this.recording) { try { this.rec.stop(); } catch (e) {} }
+    this.recording = false;
+    syncMicButton();
+  },
+  upload(blob) {
+    if (!blob || !blob.size) { announce('没有录到声音，再试一次。', { alert: '录音为空' }); return; }
+    announce('正在识别…');
+    fetch(this.endpoint, { method: 'POST', headers: { 'Content-Type': 'audio/webm' }, body: blob })
+      .then(r => r.json())
+      .then(j => {
+        const text = (j && (j.text || (j.result && j.result.text))) || '';
+        if (!text) { announce('没有听出内容，再试一次。', { alert: '转写结果为空' }); return; }
+        showHeard(text);
+        handleUtterance(text, { fromSpeech: true });
+      })
+      .catch(() => announce('云端识别没有成功。可以改用键盘上的麦克风，或者直接打字。',
+                            { alert: '云端识别失败' }));
+  }
+};
 
 /* ---- 听到原文回显 ----
 
@@ -1050,9 +1231,57 @@ function interpret(text) {
   const parsed = parseUtterance(clean, {
     items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
     pinyin: PY,
-    storeCount: State.stores.length, inStoreStep: State.step === 'store'
+    storeCount: State.stores.length, inStoreStep: State.pickingStore
   });
   return { text: clean, parsed, score: parseScore(parsed), conf: 0 };
+}
+
+/* ---- 边打边给反馈 ----
+
+   语音识别最容易出错的恰恰是商品名（「巨无霸」被听成「巨无把」）。
+   在按下发送之前就把「我理解成了什么」摆出来，用户才有机会改；
+   否则只能等加购错了再退，一来一回要多说好几句——正是「沟通难」的来源。 */
+function previewUtterance(text) {
+  const box = $('preview');
+  if (!box) return;
+  const t = String(text || '').trim();
+  if (!t) { box.hidden = true; return; }
+  const it = interpret(t);
+  box.hidden = false;
+  box.className = 'preview';
+  box.textContent = '';
+  const p = it && it.parsed;
+  if (!p) { box.textContent = '…'; return; }
+
+  if (p.intent === 'add' && p.code) {
+    const names = (p.ties && p.ties.length > 1 ? p.ties : []).map(itemByCode).filter(Boolean).map(i => i.name);
+    if (names.length > 1) {
+      box.className = 'preview bad';
+      box.textContent = '不太确定是哪一样，可能是：' + names.slice(0, 3).join(' / ') + '。说得再具体一点更稳。';
+      return;
+    }
+    const item = itemByCode(p.code);
+    box.appendChild(document.createTextNode('听懂了：'));
+    box.appendChild(el('strong', null, (item ? item.name : p.code) + (p.qty > 1 ? ' ×' + p.qty : '')));
+    return;
+  }
+  if (p.intent === 'unknown') {
+    box.className = 'preview bad';
+    box.textContent = '这句话认不出来。说得短一点通常更容易认，比如「巨无霸」「可乐」。';
+    return;
+  }
+  box.textContent = '会当成指令：' + intentLabel(p.intent);
+}
+
+function intentLabel(intent) {
+  const M = {
+    start: '开始点餐', price: '算总价', finish: '算总价', affirm: '确认', deny: '否定',
+    cancel: '清空重来', back: '回到上一步', repeat: '再说一遍', help: '能说什么',
+    menu: '念一遍类目', mycart: '念一遍已点的', remove: '拿掉一件', stores: '换门店',
+    takeway_eatin: '改成堂食', takeway_takeout: '改成外带', pickStore: '选门店',
+    stop: '停止说话', frequent: '常点'
+  };
+  return M[intent] || intent;
 }
 
 function handleAlternatives(alts) {
@@ -1142,9 +1371,16 @@ function buildRecognition() {
 }
 
 function startListening() {
+  // 只有原生通道才谈得上「自动开始听」。键盘通道要用户先唤出键盘，
+  // 云端通道要用户手势才能拿到麦克风权限——两者都由按钮点击触发。
+  if (voiceChannel() !== 'native') {
+    micUnavailableMsg = micFallbackMsg();
+    micBlocked = true;
+    return false;
+  }
   if (!recog) recog = buildRecognition();
   if (!recog) {
-    micUnavailableMsg = NO_MIC_MSG;
+    micUnavailableMsg = micFallbackMsg();
     micBlocked = true;
     return false;
   }
@@ -1165,18 +1401,37 @@ function resumeRecognition() { if (recog && wantListen && !micBlocked) { try { r
 function syncMicButton() {
   const b = $('micBtn');
   const note = $('micNote');
+  if (!b) return;
+  const ch = voiceChannel();
+
   if (!State.started) {
-    b.textContent = '开始使用';
+    b.textContent = '开始点餐';
     b.setAttribute('aria-pressed', 'false');
-    if (note) note.textContent = '按一下开始，之后随时可以按它开关说话';
+    if (note) note.textContent = shortHint(ch);
     return;
   }
-  b.textContent = listening ? '停止说话' : '开始说话';
+  // 键盘通道里，这个按钮的作用是「把焦点送到输入框」，不存在开关状态
+  if (ch === 'keyboard') {
+    b.textContent = '说话';
+    b.setAttribute('aria-pressed', 'false');
+    if (note) note.textContent = shortHint(ch);
+    return;
+  }
+  // 云端通道是「录音 → 上传」，所以按钮在「说完了」和「说话」之间切
+  if (ch === 'cloud') {
+    b.textContent = CloudASR.recording ? '说完了' : '说话';
+    b.setAttribute('aria-pressed', CloudASR.recording ? 'true' : 'false');
+    if (note) note.textContent = CloudASR.recording
+      ? '正在录音，说完按一下这个按钮。'
+      : shortHint(ch);
+    return;
+  }
+  b.textContent = listening ? '停止' : '说话';
   b.setAttribute('aria-pressed', listening ? 'true' : 'false');
   if (note) {
     note.textContent = listening
-      ? '正在听你说话。说完稍等一下，我会把听到的原话显示出来再处理。'
-      : '已经停止拾音。按一下继续说话。';
+      ? '正在听，说完可以直接接着说下一句。'
+      : '已经停止拾音，按一下继续。';
   }
 }
 
@@ -1218,7 +1473,8 @@ function renderStep() {
 function renderProgress() {
   const ol = $('progress');
   if (!ol) return;
-  const now = STEPS[State.step].no;
+  // 「换门店」是第 1 步里的一个临时覆盖层，进度条仍然停在「说单」那一格
+  const now = (State.pickingStore ? STEPS.order : STEPS[State.step]).no;
   if (ol.children.length !== TOTAL_STEPS) {
     ol.innerHTML = '';
     for (let i = 0; i < TOTAL_STEPS; i++) ol.appendChild(document.createElement('li'));
@@ -1235,16 +1491,35 @@ function renderBody() {
   const box = $('body');
   box.innerHTML = '';
   if (!State.started) {
-    box.innerHTML = '<p class="empty">还没有开始。按上面的「开始使用」，或用键盘按回车。</p>';
+    box.innerHTML = '<p class="empty">还没有开始。按上面的「开始点餐」，或用键盘按回车。</p>';
     return;
   }
-  if (State.step === 'store') box.appendChild(renderStores());
-  else if (State.step === 'browse') box.appendChild(renderMenu());
-  else if (State.step === 'cart') box.appendChild(renderCart());
-  else if (State.step === 'price') box.appendChild(renderQuote());
+  // 门店列表平时不出现：门店在第 1 步自动选好，只有说「换门店」时才临时铺开
+  if (State.pickingStore) box.appendChild(renderStores());
+  else if (State.step === 'order') box.appendChild(renderOrderStage());
   else if (State.step === 'confirm') box.appendChild(renderQuote(true));
-  else if (State.step === 'ordered') box.appendChild(renderOrder());
   else if (State.step === 'done') box.appendChild(renderOrder());
+}
+
+/* 第 1 步「说单」的内容区：已经点了什么 + 小计 + 能点什么。
+   顺序刻意是「已点 → 小计 → 菜单」，因为用户在这一步最常确认的是「我刚才说的进去了没有」。 */
+function renderOrderStage() {
+  const frag = document.createDocumentFragment();
+  const bar = el('p', 'store-bar');
+  bar.appendChild(el('span', 'lbl', '门店'));
+  bar.appendChild(el('strong', null, State.store ? State.store.storeName : '未选定'));
+  bar.appendChild(el('span', 'sub', '　说「换门店」可以改'));
+  frag.appendChild(bar);
+
+  frag.appendChild(el('h3', null, '已经点了'));
+  if (State.cart.length) {
+    frag.appendChild(renderCart());
+  } else {
+    frag.appendChild(el('p', 'empty', '还没点东西。直接说想吃什么，比如「来一份巨无霸」。'));
+  }
+  frag.appendChild(el('h3', null, '可以点什么'));
+  frag.appendChild(renderMenu());
+  return frag;
 }
 
 function el(tag, cls, text) {
@@ -1304,10 +1579,6 @@ function renderMenu() {
     wrap.appendChild(c);
   }
   frag.appendChild(wrap);
-  if (State.cart.length) {
-    frag.appendChild(el('h3', null, '当前购物车'));
-    frag.appendChild(renderCart());
-  }
   return frag;
 }
 
@@ -1334,7 +1605,7 @@ function renderCart() {
   sum.appendChild(el('strong', null, '小计 ' + money(cents)));
   if (missing) sum.appendChild(el('span', 'sub', '　（有餐品没有价格，未计入）'));
   frag.appendChild(sum);
-  frag.appendChild(el('p', 'sub', '这是按菜单现价相加的小计。点「算价」之后才会走正式的报价流程。'));
+  frag.appendChild(el('p', 'sub', '按菜单现价相加的小计；正式报价在下一步走 calculate-price。'));
   return frag;
 }
 
@@ -1421,24 +1692,30 @@ function renderOrder() {
    ========================================================================== */
 function cartQty() { return State.cart.reduce((n, l) => n + l.qty, 0); }
 
+/* 购物车小计（分）。纯本地算，点单过程中用来即时反馈「现在多少钱了」——
+   不必让用户为了知道小计而专门喊一声「算价」。正式的报价（含优惠、打包费）
+   在进入第 2 步时才调 MCP 的 calculate-price。 */
+function cartCents() {
+  return State.cart.reduce((s, l) => {
+    const i = itemByCode(l.code);
+    return s + (i && i.price != null ? Math.round(i.price * 100) * l.qty : 0);
+  }, 0);
+}
+
 function addToCart(code, qty, alsoConsider) {
   const item = itemByCode(code);
-  if (!item) { announce('菜单里没有找到这个东西，你可以说「菜单」让我念一遍类目。'); return false; }
+  if (!item) { announce('菜单里没有找到这个东西。可以说「菜单」让我念一遍类目。'); return false; }
   const line = State.cart.filter(l => l.code === code)[0];
   if (line) line.qty += qty; else State.cart.push({ code, qty });
-  State.step = 'browse';
+  State.step = 'order';
+  State.pickingStore = false;
   renderStep();
   let extra = '';
   // 精确匹配成立时顺口提一句还有更大份的同名商品，但不打断用户
   const also = (alsoConsider || []).map(c => itemByCode(c)).filter(Boolean);
-  if (also.length) {
-    extra = '菜单里还有' + also.map(a => a.name + '（' + (a.price != null ? a.price.toFixed(2) + ' 元' : '价格暂无') + '）').join('、')
-          + '，要那个的话跟我说。';
-  }
-  announce('已加入 ' + item.name + ' 乘以 ' + qty + '。' +
-           (item.price != null ? '单价 ' + item.price.toFixed(2) + ' 元。' : '') +
-           '购物车现在一共 ' + cartQty() + ' 件。' + extra +
-           '要说「算价」我就去报价。');
+  if (also.length) extra = '还有' + also.map(a => a.name).join('、') + '，要那个跟我说。';
+  announce('加了 ' + item.name + ' ' + qty + ' 份。现在一共 ' + cartQty() + ' 件，小计 '
+           + money(cartCents()) + '。' + extra + '还说吗？说「就这些」我就算总价。');
   return true;
 }
 
@@ -1461,10 +1738,9 @@ function askAmbiguous(ties, qty, rawQuery) {
 function listCategories() {
   const names = (DATA.categories || []).map((c, i) => (i + 1) + '. ' + c.name);
   State.batch = { category: null, offset: 0 };
-  State.step = 'browse';
   renderStep();
-  announce('这家店的菜单分成 ' + names.length + ' 类：' + names.join('；') +
-           '。你可以直接说想吃什么，也可以说类目名，比如「汉堡」，我就把那一类念给你。');
+  announce('这家店分 ' + names.length + ' 类：' + names.join('；') +
+           '。说类目名我就把那一类念给你，也可以直接说想吃什么。');
 }
 
 function speakCategory(name) {
@@ -1476,7 +1752,7 @@ function speakCategory(name) {
   State.batch.offset = chunk.length;
   const parts = chunk.map((c, i) => { const it = itemByCode(c); return (i + 1) + '. ' + it.name + '，' + (it.price != null ? it.price.toFixed(2) + ' 元' : '价格暂无'); });
   announce(cat.name + '一共 ' + codes.length + ' 项。前 ' + chunk.length + ' 项：' + parts.join('；') +
-           (codes.length > chunk.length ? '。说「继续」听后面的。' : '。说「就这个」或者说名字，我就加进购物车。'));
+           (codes.length > chunk.length ? '。说「继续」听后面的。' : '。说名字我就加进购物车。'));
   return true;
 }
 
@@ -1492,44 +1768,67 @@ function continueBatch() {
   announce(parts.join('；') + ((cat.meals.length > State.batch.offset) ? '。说「继续」听后面的。' : '。这一类念完了。'));
 }
 
+/* 进入第 2 步：算总价 + 问确认。
+   取餐方式默认堂食（最常见的一种），用户不说就不必先做一道选择题；
+   说了「外带」当场改，改完仍然停在这一步等一句「确认」。 */
 function doQuote() {
-  if (!State.cart.length) { announce('购物车还是空的，先说想吃什么吧。'); return; }
+  if (!State.cart.length) { announce('还没点东西。先说想吃什么，比如「来一份巨无霸」。'); return; }
   quoteRemote().then(q => {
-    if (!q) { announce('报价失败，稍后可以再试一次。也可以说「菜单」继续点餐。'); return; }
+    if (!q) { announce('算价没有成功，稍后再试一次。也可以继续说想吃什么。'); return; }
     State.quoted = q;
-    State.step = 'price';
+    if (!State.takeWay) State.takeWay = defaultTakeWay(q);
+    State.step = 'confirm';
+    State.pickingStore = false;
     renderStep();
-    const n = State.cart.reduce((s, l) => s + l.qty, 0);
-    const names = State.cart.map(l => { const i = itemByCode(l.code); return (i ? i.name : l.code) + ' 乘 ' + l.qty; });
-    announce('你点了：' + names.join('，') + '，一共 ' + n + ' 件。' +
-             (q.estimated ? '估算总计 ' : '总计 ') + (q.price / 100).toFixed(2) + ' 元。' +
-             (q.discount ? '优惠 ' + (q.discount / 100).toFixed(2) + ' 元。' : '') +
-             '取餐方式有：' + (q.takeWayList || []).map(t => t.title).join('、') + '。请说「堂食」或者「外带」。',
-             { alert: '报价完成' });
+    announce(confirmSpeech(q), { alert: '总价已算出，等待确认下单' });
   });
 }
 
+function defaultTakeWay(q) {
+  const list = (q && q.takeWayList) || [];
+  const eat = list.filter(t => t.code === 'eat-in')[0];
+  return ((eat || list[0] || {}).code) || null;
+}
+function takeWayTitle(code) {
+  if (!code) return '';
+  const list = (State.quoted && State.quoted.takeWayList) || [];
+  const t = list.filter(x => x.code === code)[0];
+  return t ? t.title : '';
+}
+
+/* 第 2 步要念的话。刻意只说三件事：多少件、多少钱、怎么改。
+   早期的版本把明细、优惠、每种取餐方式都念一遍，用户要听四十秒才能开口说「确认」。 */
+function confirmSpeech(q) {
+  const names = State.cart.map(l => { const i = itemByCode(l.code); return (i ? i.name : l.code) + ' ' + l.qty + ' 份'; });
+  const tw = takeWayTitle(State.takeWay);
+  return '一共 ' + cartQty() + ' 件：' + names.join('，') + '。'
+       + (q.estimated ? '估算总计 ' : '总计 ') + (q.price / 100).toFixed(2) + ' 元。'
+       + (q.discount ? '已优惠 ' + (q.discount / 100).toFixed(2) + ' 元。' : '')
+       + (tw ? '取餐方式' + tw + '。' : '')
+       + '说「确认」我就下单；要改取餐方式就说「堂食」或「外带」，要加东西直接说。';
+}
+
 function chooseTakeWay(code) {
-  if (!State.quoted) { announce('还没有报价，先说「算价」。'); return; }
+  if (!State.quoted) { announce('还没算价。先说「就这些」，我算一下总价。'); return; }
   const t = (State.quoted.takeWayList || []).filter(x => x.code === code)[0];
   if (!t) { announce('这家店没有这个取餐方式。可以说「堂食」或者「外带」。'); return; }
   State.takeWay = t.code;
-  renderStep();
-  if (!$('allowOrder').checked) {
-    State.step = 'done';
-    renderStep();
-    announce('取餐方式选好了：' + t.title + '。' +
-             '不过「允许创建订单」还没打开，所以流程到这里就结束——不会产生任何订单。' +
-             '要去店里照着点，或者打开设置里的开关让我帮你下单，都可以。', { alert: '流程结束，未创建订单' });
-    return;
-  }
   State.step = 'confirm';
   renderStep();
-  announce('取餐方式：' + t.title + '。最后确认一次，真的要创建这个订单吗？说「确认」我就下单。',
-           { alert: '等待下单确认' });
+  announce('取餐方式改成' + t.title + '。' + confirmSpeech(State.quoted), { alert: '等待确认下单' });
 }
 
 function createOrderRemote() {
+  if (!State.quoted) { announce('还没算价。先说「就这些」，我算一下总价。'); return; }
+  // 下单开关是安全阀：关着的时候只算钱、绝不提交。这里必须说清「为什么没下单、怎么开」，
+  // 而不是让用户以为已经下单了。
+  if (!$('allowOrder').checked) {
+    announce('订单没有创建——因为「允许创建订单」这个开关还关着。'
+             + '你可以在页面下面的设置里打开它，再对我说一声「确认」。'
+             + '这一单已经算好了，总计 ' + (State.quoted.price / 100).toFixed(2) + ' 元。',
+             { alert: '下单开关未打开，未创建订单' });
+    return;
+  }
   // 演示模式没有本地服务，浏览器又不能直连 MCP（对方不带 CORS 头），
   // 所以这里必须明确告诉用户「为什么下不了单、要怎么做」，而不是含糊地报一句「失败」。
   if (!LOCAL) {
@@ -1555,7 +1854,7 @@ function createOrderRemote() {
       return;
     }
     State.orderResult = res.data;
-    State.step = 'ordered';
+    State.step = 'done';
     renderStep();
     announce('订单已经创建。请用手机扫码，或者打开麦当劳 App 完成支付。'
              + '支付完成后，以 App 里的订单状态为准。', { alert: '订单已创建' });
@@ -1579,15 +1878,15 @@ function handleUtterance(raw, opts) {
   if (!o.fromSpeech) showHeard(text);
 
   if (!State.started) {
-    if (/^(开始|开始吧|开始使用|启动|来吧|嗯|嗯开始|好|好的)$/.test(normalizeUtterance(text))) { begin(); return; }
-    announce('我们还没开始。请说「开始」，或者按上面的「开始使用」按钮。');
+    if (/^(开始|开始吧|开始使用|开始点餐|启动|来吧|嗯|嗯开始|好|好的)$/.test(normalizeUtterance(text))) { begin(); return; }
+    announce('还没开始。说「开始」，或者按上面的「开始点餐」按钮。');
     return;
   }
 
   // 消歧优先：上一步问了「是哪一个」，这一步的回答按候选来解。
   // 但控制类指令必须放行——否则用户在等待消歧时说「取消」，会被当成商品名去匹配，
   // 结果是既没取消、也没加购，用户完全不知道发生了什么。
-  const CONTROL_RE = /^(取消|算了|不要了|重来|重新开始|清空|退回|上一步|返回|再说一遍|重复一遍|没听清|停|停止|我能说什么|帮助|菜单|算价|多少钱|结账|确认下单|下单)$/;
+  const CONTROL_RE = /^(取消|算了|不要了|重来|重新开始|清空|退回|上一步|返回|再说一遍|重复一遍|没听清|停|停止|我能说什么|帮助|菜单|算价|多少钱|结账|确认下单|下单|就这些|换门店)$/;
   if (State.pendingTies && !CONTROL_RE.test(normalizeUtterance(text))) {
     const c = State.resolveTie(text);
     if (c) return;
@@ -1599,7 +1898,7 @@ function handleUtterance(raw, opts) {
   const parsed = parseUtterance(text, {
     items: DATA.items, aliases: DATA.aliases, homophones: DATA.homophones,
     pinyin: PY,
-    storeCount: State.stores.length, inStoreStep: State.step === 'store'
+    storeCount: State.stores.length, inStoreStep: State.pickingStore
   });
   dispatch(parsed, text);
 }
@@ -1628,30 +1927,37 @@ State.resolveTie = function (text) {
 function dispatch(p, raw) {
   switch (p.intent) {
     case 'start':   begin(); return;
-    case 'stop':    stopListening(); announce('好，我停下来了。按「开始说话」可以继续。'); return;
+    case 'stop':    stopListening(); announce('好，我停下来了。按一下可以继续。'); return;
     case 'help':    return sayHelp();
     case 'repeat':  return announce(STEPS[State.step].say);
     case 'back':    return goBack();
-    case 'cancel':  return resetAll('已经全部清空，我们重新开始。');
+    case 'cancel':  return resetAll('已经全部清空，重新开始。想吃什么直接说。');
+    case 'again':   return resetAll('好，重新来一单。想吃什么直接说。');
     case 'menu':    return listCategories();
     case 'continue':return continueBatch();
-    case 'mycart':  State.step = 'cart'; renderStep(); return speakCart();
+    case 'mycart':  return speakCart();
     case 'frequent':return pickFrequent();
     case 'price':   return doQuote();
+    case 'finish':  return doQuote();
     case 'order':   return tryOrder();
     case 'affirm':
       // 「好 / 嗯 / 可以」在不同步骤下要有不同的实际作用，
       // 否则视障用户说了一句「好」却什么也没发生，会以为是程序坏了。
       if (State.step === 'confirm') return createOrderRemote();
-      if (State.step === 'store')   return speakStores();
-      if (State.step === 'browse')  return State.cart.length ? doQuote() : listCategories();
-      if (State.step === 'cart')    return doQuote();
-      if (State.step === 'price')   { announce('还要选一下取餐方式：说「堂食」或者「外带」。'); return; }
+      if (State.pickingStore)       return speakStores();
+      if (State.step === 'order')   return doQuote();
       announce('好的。'); return;
     case 'deny':
-      if (State.step === 'confirm') { State.step = 'price'; renderStep(); announce('好，那就不下单。你可以改取餐方式，或者说「取消」把购物车清空。'); return; }
-      if (State.step === 'store')   { speakStores(); return; }
-      if (State.step === 'price')   { State.step = 'browse'; renderStep(); announce('好，回到点餐。可以继续说想吃什么，或者拿掉不想要的。'); return; }
+      if (State.step === 'confirm') {
+        State.step = 'order'; renderStep();
+        announce('好，不下单。还想加点什么就说；不想点了就说「取消」。');
+        return;
+      }
+      if (State.pickingStore) {
+        State.pickingStore = false; State.step = 'order'; renderStep();
+        announce('好，门店不变。继续说想吃什么。');
+        return;
+      }
       announce('好的，那就不动。'); return;
     case 'takeway_eatin':    return chooseTakeWay('eat-in');
     case 'takeway_takeout':  return chooseTakeWay('take-in-store');
@@ -1675,14 +1981,14 @@ function dispatch(p, raw) {
       return;
     default:
       // 类目名也算一种说法：「汉堡」「饮品」
-      if (State.step === 'browse' && speakCategory(raw)) return;
-      if (State.step === 'store' && pickStoreByName(raw)) return;
+      if (State.pickingStore && pickStoreByName(raw)) return;
+      if (speakCategory(raw)) return;
       // 没听懂时**必须**把识别到的原话念出来。
       // 否则用户无法区分「麦克风没听见」「听见了但识别错了」「识别对了但我没理解」——
       // 这三种情况下该做的事完全不同（重说一遍 / 换个说法 / 换个说法），
       // 而之前的版本只回一句「没听懂」，等于把判断责任推给了用户。
       announce('我听到的是「' + raw + '」，但没认出是哪个。'
-               + '可以说得短一点，比如「巨无霸」「可乐」；也可以说「我能说什么」听一遍当前能用的说法。',
+               + '说得短一点会更容易认，比如「巨无霸」「可乐」；也可以说「我能说什么」听一遍现在能用的说法。',
                { alert: '没听懂：' + raw });
   }
 }
@@ -1690,15 +1996,14 @@ function dispatch(p, raw) {
 function sayHelp() {
   const s = STEPS[State.step];
   announce('现在是第 ' + s.no + ' 步，' + s.name + '。可以说：' + s.chips.join('、') +
-           '。任何一步都可以说「再说一遍」「退回上一步」「取消」。');
+           '。任何一步都可以说「再说一遍」「取消」。');
 }
 
 function speakCart() {
-  if (!State.cart.length) { announce('购物车是空的。现在在第 ' + STEPS[State.step].no + ' 步，' + STEPS[State.step].name + '。'); return; }
-  const names = State.cart.map(l => { const i = itemByCode(l.code); return (i ? i.name : l.code) + ' 乘 ' + l.qty; });
-  const cents = State.cart.reduce((s, l) => { const i = itemByCode(l.code); return s + (i && i.price != null ? Math.round(i.price * 100) * l.qty : 0); }, 0);
-  announce('购物车里有 ' + names.join('，') + '。小计 ' + (cents / 100).toFixed(2) + ' 元。' +
-           '要改就说「再加一份什么」或者「不要什么了」；没问题就说「算价」。');
+  if (!State.cart.length) { announce('还什么都没点。直接说想吃什么，比如「来一份巨无霸」。'); return; }
+  const names = State.cart.map(l => { const i = itemByCode(l.code); return (i ? i.name : l.code) + ' ' + l.qty + ' 份'; });
+  announce('现在点了 ' + names.join('，') + '，共 ' + cartQty() + ' 件，小计 ' + money(cartCents()) + '。' +
+           '要改就说「再加一份什么」或者「不要什么了」；点完了说「就这些」。');
 }
 
 function pickFrequent() {
@@ -1722,11 +2027,12 @@ function pickStore(index) {
     return;
   }
   State.store = s;
-  State.step = 'browse';
+  State.pickingStore = false;
+  State.step = 'order';
   renderStep();
-  announce('好，门店是' + s.storeName + '，距离约 ' + s.distance + ' 米。' +
-           (s.businessStatus ? '现在在营业。' : '注意这家店当前显示打烊。') +
-           '现在说你想吃什么吧，比如「来一份巨无霸和一杯可乐」。');
+  announce('门店换成' + s.storeName + '，距离约 ' + s.distance + ' 米。'
+           + (s.businessStatus ? '现在在营业。' : '注意这家店当前显示打烊。')
+           + '继续说想吃什么。');
   if (isLocalMode()) loadLocalMenu(s.storeCode);
 }
 
@@ -1751,8 +2057,10 @@ function pickStoreByName(text) {
   return true;
 }
 
+/* 「换门店」——门店平时不出现，只有用户主动要换时才把列表铺开。
+   这样既不用所有人都先做一道选择题，也没有把换店的能力藏起来。 */
 function goStores() {
-  State.step = 'store';
+  State.pickingStore = true;
   renderStep();
   speakStores();
 }
@@ -1766,61 +2074,84 @@ function speakStores() {
     tail = '演示快照只覆盖了第 ' + (idx + 1) + ' 家「' + DATA.source.storeName + '」的菜单，'
          + '选它就对了；其余门店没有菜单数据，选了我也没法替你点。';
   }
-  announce('附近有 ' + State.stores.length + ' 家店：' + parts.join('；') + '。'
-           + tail + '说序号或者店名都行。');
+  announce('附近有 ' + State.stores.length + ' 家店：' + parts.join('；') + '。' + tail
+           + (State.store ? '现在选的是' + State.store.storeName + '。' : '')
+           + '说序号或者店名都行，不想换就说「不是」。');
 }
 
 function goBack() {
-  const order = ['welcome', 'store', 'browse', 'cart', 'price', 'confirm'];
-  const i = order.indexOf(State.step);
-  if (i <= 1) { announce('已经是最前面一步了。'); return; }
-  State.step = order[i - 1];
-  renderStep();
-  announce('退回上一步：' + STEPS[State.step].name + '。' + STEPS[State.step].say);
+  if (State.pickingStore) {
+    State.pickingStore = false; State.step = 'order'; renderStep();
+    announce('好，门店不变。继续说想吃什么。');
+    return;
+  }
+  if (State.step === 'confirm') {
+    State.step = 'order'; renderStep();
+    announce('回到点单。还想加点什么就说；点完了再说一次「就这些」。');
+    return;
+  }
+  announce('已经是最前面一步了。想吃什么直接说。');
 }
 
 function resetAll(msg) {
   State.cart = []; State.quoted = null; State.takeWay = null;
   State.pendingTies = null; State.batch = { category: null, offset: 0 };
   State.orderResult = null;
-  State.step = State.store ? 'browse' : 'store';
+  State.pickingStore = false;
+  State.step = State.started ? 'order' : 'welcome';
   showHeard('');
   renderStep();
-  announce(msg || '已经清空购物车。');
+  announce(msg || '已经清空，重新开始。想吃什么直接说。');
 }
 
 function tryOrder() {
-  if (!State.quoted) { announce('还没有报价。先说「算价」。'); return; }
-  if (!State.takeWay) { announce('还没选取餐方式。请说「堂食」或者「外带」。'); return; }
-  if (!$('allowOrder').checked) {
-    announce('「允许创建订单」这个开关还关着，所以我不会下单。' +
-             '你可以在页面下面的设置里把它打开，再对我说一次「确认下单」。', { alert: '下单开关未打开' });
-    return;
-  }
+  if (!State.quoted) { announce('还没算价。先说「就这些」，我算一下总价。'); return; }
   State.step = 'confirm';
   renderStep();
-  announce('再说一次确认：真的要创建订单吗？说「确认」我就下单，说「不是」就退回去。', { alert: '等待确认' });
+  announce('确认下单吗？说「确认」我就下单。', { alert: '等待下单确认' });
+}
+
+/* 门店自动选定：不让用户为了「去哪家店」先做一道选择题。
+   演示快照只有一家店有菜单，那就只能选它；本地模式优先营业中、距离最近的。
+   想换随时说「换门店」。 */
+function autoPickStore() {
+  const stores = State.stores || [];
+  if (!stores.length) return null;
+  let pool = stores;
+  if (!isLocalMode()) {
+    const withMenu = stores.filter(hasMenuSnapshot);
+    if (withMenu.length) pool = withMenu;
+  } else {
+    const open = stores.filter(s => s.businessStatus);
+    if (open.length) pool = open;
+  }
+  const byDist = pool.slice().sort((a, b) => (a.distance || 0) - (b.distance || 0));
+  State.store = byDist[0] || stores[0];
+  return State.store;
 }
 
 function begin() {
   State.started = true;
+  State.pickingStore = false;
   if (!State.stores.length) State.stores = (DATA.stores || []).slice();
-  if (!State.store) State.step = 'store';
+  const auto = autoPickStore();
+  State.step = 'order';
   syncMicButton();
   const micOk = startListening();
   renderStep();
-  const intro = '好，现在开始。第 2 步，选择门店。' + STEPS.store.say;
+
+  const head = auto ? '好，门店是' + auto.storeName + '，距离约 ' + auto.distance + ' 米。' : '好。';
+  const intro = head + '直接说想吃什么就行，可以一次说好几样，比如「来一份巨无霸和一杯可乐」。'
+              + '说完了说「就这些」，我算总价。';
 
   // 这里踩过一个坑：早期版本先 announce 降级提示、再由 begin 播报开场白，
   // 而 speak() 每次都会先 cancel 上一条——于是那条最重要的提示被瞬间覆盖，
   // 用户一个字都听不到。所以必须把提示**并进**开场白里说。
   if (micOk) {
     announce(intro);
-    setTimeout(speakStores, 2800);
   } else {
     announce('先说一件事：' + micUnavailableMsg + '　' + intro,
-             { alert: '语音识别不可用，请用输入框打字' });
-    setTimeout(speakStores, 6000);
+             { alert: micUnavailableMsg });
   }
 }
 
@@ -2150,7 +2481,7 @@ function init() {
   }
   State.stores = (DATA.stores || []).slice();
   State.store = null;
-  // 本地模式拉过门店后，默认就停在第 2 步让人选
+  // 门店不再是一道必须回答的题：第 1 步会说单，门店在 begin() 里自动选好
   State.step = 'welcome';
 
   // 展开拼音表（「音节 → 汉字串」→「字 → 音节」）。缺表不报错：
@@ -2168,10 +2499,19 @@ function init() {
 
   $('micBtn').addEventListener('click', () => {
     if (!State.started) { begin(); return; }
+    const ch = voiceChannel();
+    // 键盘通道：这个按钮不是「麦克风开关」，而是「把焦点送到输入框、唤起系统键盘」。
+    // 必须同步调用 focus()，否则移动端不会弹键盘。
+    if (ch === 'keyboard') { openTypePad(); return; }
+    if (ch === 'cloud') {
+      if (CloudASR.recording) CloudASR.stop(); else CloudASR.start();
+      return;
+    }
     if (listening) { stopListening(); announce('好，我停下来了。按一下可以继续。'); }
     else {
       const ok = startListening();
-      announce(ok ? '我在听。' : micUnavailableMsg, ok ? {} : { alert: '语音识别不可用，请用输入框打字' });
+      const msg = micFallbackMsg();
+      announce(ok ? '我在听。' : msg, ok ? {} : { alert: msg });
     }
   });
   $('repeatBtn').addEventListener('click', () => { if (!State.started) { announce(STEPS.welcome.say); return; } announce(STEPS[State.step].say); });
@@ -2179,13 +2519,35 @@ function init() {
   $('helpBtn').addEventListener('click', () => { if (!State.started) { announce(STEPS.welcome.say + ' 开始之后每一步我都会告诉你能说什么。'); return; } sayHelp(); });
   $('sendBtn').addEventListener('click', () => {
     const v = $('typeInput').value.trim();
-    if (!v) { announce('输入框是空的，先打一句想说的话。'); $('typeInput').focus(); return; }
+    if (!v) {
+      announce('还没说话呢。按键盘上的麦克风说一句，或者直接打字，然后按回车。');
+      $('typeInput').focus();
+      return;
+    }
     $('typeInput').value = '';
+    previewUtterance('');
     handleUtterance(v);
   });
+  // 边打边显示「我理解成了什么」
+  $('typeInput').addEventListener('input', () => previewUtterance($('typeInput').value));
   $('typeInput').addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') { ev.preventDefault(); $('sendBtn').click(); }
   });
+
+  // 云端转写地址：填了就启用，留空就完全不走这条路。存在本地，刷新不丢。
+  try { CloudASR.endpoint = localStorage.getItem('mcvoice_asr') || ''; } catch (e) { /* 无痕模式等 */ }
+  const ep = $('asrEndpoint');
+  if (ep) {
+    ep.value = CloudASR.endpoint;
+    ep.addEventListener('change', () => {
+      CloudASR.endpoint = ep.value.trim();
+      try { localStorage.setItem('mcvoice_asr', CloudASR.endpoint); } catch (e) {}
+      announce(CloudASR.endpoint
+        ? '云端识别地址已保存。之后按圆按钮就是录音说话。'
+        : '已清空云端识别地址，回到默认的说法。');
+      syncMicButton();
+    });
+  }
   $('auditBtn').addEventListener('click', runAudit);
 
   $('speakOn').addEventListener('change', () => {
@@ -2228,12 +2590,14 @@ function init() {
     else if (k === 'a') { ev.preventDefault(); $('auditBtn').click(); }
   });
 
-  // 暴露给自动化测试：状态机、匹配器、渲染入口
+  // 暴露给自动化测试：状态机、匹配器、渲染入口、说话通道
   globalThis.__MCVOICE_APP__ = {
     State, STEPS, TOTAL_STEPS, handleUtterance, begin, runAudit, dispatch,
     matchItems, parseUtterance, estimatePrice, itemByCode, speechSupport,
     resetAll, chooseTakeWay, doQuote, goStores,
-    interpret, handleAlternatives, showHeard, renderStep, parseScore, rankCandidates
+    interpret, handleAlternatives, showHeard, renderStep, parseScore, rankCandidates,
+    voiceChannel, micFallbackMsg, shortHint, openTypePad, previewUtterance,
+    intentLabel, autoPickStore, cartCents, CloudASR, IS_WECHAT, IS_MOBILE
   };
 
   // URL 带 ?audit=1 时自动跑一次自检，方便自动化验证
